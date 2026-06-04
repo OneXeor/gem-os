@@ -33,6 +33,24 @@ private data class LiteLlmHealthResponse(
     val error: String? = null,
 )
 
+@Serializable
+private data class CodeAgentProviderResponse(
+    val id: String,
+    val mode: String,
+    val command: String?,
+    val auth: String,
+    val nonInteractive: Boolean,
+    val defaultArgs: List<String>,
+    val defaultModel: String,
+    val route: String = "direct",
+)
+
+@Serializable
+private data class CodeAgentProvidersResponse(
+    val default: String,
+    val providers: List<CodeAgentProviderResponse>,
+)
+
 fun main() {
     val cfg = ConfigLoader.load()
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -55,6 +73,25 @@ fun main() {
             }
             get("/providers") {
                 call.respond(ConfigLoader.load().providers)
+            }
+            get("/providers/code-agents") {
+                val codeAgents = ConfigLoader.load().providers.providers.codeAgent
+                call.respond(
+                    CodeAgentProvidersResponse(
+                        default = codeAgents.default,
+                        providers = codeAgents.options.map { (id, option) ->
+                            CodeAgentProviderResponse(
+                                id = id,
+                                mode = option.mode,
+                                command = option.command,
+                                auth = option.auth,
+                                nonInteractive = option.nonInteractive,
+                                defaultArgs = option.defaultArgs,
+                                defaultModel = option.defaultModel,
+                            )
+                        },
+                    ),
+                )
             }
             get("/providers/litellm/health") {
                 val current = ConfigLoader.load()

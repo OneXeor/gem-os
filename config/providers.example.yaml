@@ -14,8 +14,18 @@ providers:
     default: "codex"
     options:
       codex:
-        mode: "cli-or-api"
+        mode: "direct-cli"
+        command: "codex"
+        auth: "host"
+        nonInteractive: true
+        defaultArgs:
+          - "exec"
         defaultModel: "latest"
       claude:
-        mode: "claude-code-cli"
+        mode: "direct-cli"
+        command: "claude"
+        auth: "host"
+        nonInteractive: true
+        defaultArgs:
+          - "-p"
         defaultModel: "latest"

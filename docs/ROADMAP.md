@@ -56,6 +56,8 @@ Deliverables:
 - Provider registry.
 - Chat provider interface.
 - Code-agent provider interface.
+- Direct non-interactive Codex adapter.
+- Direct non-interactive Claude Code adapter.
 - Cost/token tracking.
 - Provider health checks.
 - Per-project defaults and overrides.
@@ -63,6 +65,7 @@ Deliverables:
 Exit criteria:
 - Slack can run the same simple prompt through Claude, Codex, or LiteLLM by
   explicit choice.
+- Implementation jobs can run Codex or Claude Code directly without LiteLLM.
 - Run records include provider, model, tokens, cost, and status.
 
 ## Stage 4: Slack Bot
@@ -173,4 +176,3 @@ Deliverables:
 - Provider fallback.
 - Run cancellation.
 - Rollback playbooks.
-

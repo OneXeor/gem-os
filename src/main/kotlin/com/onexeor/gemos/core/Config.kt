@@ -77,6 +77,10 @@ data class ChatProviderOption(
 @Serializable
 data class CodeProviderOption(
     val mode: String,
+    val command: String? = null,
+    val auth: String = "host",
+    val nonInteractive: Boolean = true,
+    val defaultArgs: List<String> = emptyList(),
     val defaultModel: String = "latest",
 )
 

@@ -9,7 +9,7 @@ Slack
 slack-bot ---> identity/project context ---> provider-router
   |                    |                         |
   |                    v                         v
-  |                memory/db                Claude/Codex/LiteLLM
+  |                memory/db          LiteLLM chat / direct code agents
   |
   v
 scheduler ---> pipelines ---> artifacts/logs/results
@@ -44,12 +44,14 @@ Non-goals:
 Responsibilities:
 - Normalize provider calls.
 - Route chat calls to LiteLLM or direct provider APIs.
-- Route code-agent calls to Codex or Claude Code adapters.
+- Route code-agent calls to direct Codex or Claude Code adapters.
 - Track provider, model, tokens, cost, latency, and errors.
 
 Provider classes:
 - `chat`: text/vision/reasoning calls that do not edit local repos directly.
 - `code_agent`: long-running coding sessions that can read/write repos.
+  These bypass LiteLLM and use direct non-interactive Codex or Claude Code
+  adapters.
 
 ### scheduler
 
@@ -78,6 +80,22 @@ Responsibilities:
 - API key routing.
 - Cost visibility.
 - Fallback policies for non-code-agent calls.
+
+Non-goals:
+- Running Codex or Claude Code sessions.
+- Owning code-agent authentication, repo worktrees, or execution logs.
+
+### code agents
+
+Responsibilities:
+- Run Codex and Claude Code in non-interactive mode.
+- Use host-owned CLI/API authentication rather than LiteLLM.
+- Execute inside explicit worktrees/branches.
+- Stream logs and final results back to scheduler/admin/Slack.
+
+Non-goals:
+- Running from the Slack request handler.
+- Sharing LiteLLM provider keys or budgets.
 
 ### cloudflared
 
@@ -120,6 +138,7 @@ Host-controlled:
 - Android emulator initially.
 - Local IDE/editor.
 - Optional provider CLI auth files.
+- Codex and Claude Code CLI authentication.
 
 Reason: Linux containers cannot run iOS simulator. Android emulator can run in
 containers, but on Mac it adds complexity before the core system is stable.
