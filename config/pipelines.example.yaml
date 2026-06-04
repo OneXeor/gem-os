@@ -3,7 +3,7 @@ pipelines:
     name: "ASO Monitor"
     stage: "mvp"
     enabled: false
-    project_ids:
+    projectIds:
       - "aso-fabric"
     schedule:
       cron: "0 9 * * 1-5"
@@ -21,9 +21,8 @@ pipelines:
     enabled: false
     mode: "manual-only"
     provider:
-      code_agent: "codex"
+      codeAgent: "codex"
     safety:
-      require_branch: true
-      require_tests: true
-      require_human_approval_for_pr: true
-
+      requireBranch: true
+      requireTests: true
+      requireHumanApprovalForPr: true

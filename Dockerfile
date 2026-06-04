@@ -1,25 +1,20 @@
-FROM python:3.12-slim
+FROM gradle:8.14.3-jdk21-alpine AS build
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+WORKDIR /workspace
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl git ca-certificates \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+COPY settings.gradle.kts build.gradle.kts gradle.properties ./
+COPY src ./src
+COPY config ./config
+
+RUN gradle --no-daemon --max-workers=1 clean test installDist
+
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-COPY pyproject.toml README.md ./
-COPY packages ./packages
-COPY services ./services
-COPY pipelines ./pipelines
+COPY --from=build /workspace/build/install/gem-os ./
 COPY config ./config
 
-RUN pip install --no-cache-dir -e .
-
 ENV GEM_HOME=/app
-ENV PYTHONPATH=/app/packages:/app
 
-CMD ["python", "-m", "services.scheduler.cli", "--status"]
+CMD ["java", "-cp", "/app/lib/*", "com.onexeor.gemos.scheduler.SchedulerMainKt", "--status"]

@@ -9,10 +9,9 @@ gem:
 
 users:
   viktor:
-    display_name: "Viktor"
-    slack_user_ids: []
+    displayName: "Viktor"
+    slackUserIds: []
     timezone: "Europe/Warsaw"
     preferences:
       default_interface: "slack"
       default_provider: "codex"
-

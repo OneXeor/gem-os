@@ -3,19 +3,16 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "dev",
   "workspaceFolder": "/workspace/gem-os",
-  "remoteUser": "gem",
+  "remoteUser": "gradle",
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "customizations": {
     "vscode": {
       "settings": {
-        "python.defaultInterpreterPath": "/workspace/gem-os/.venv/bin/python",
-        "python.terminal.activateEnvironment": true,
         "terminal.integrated.defaultProfile.linux": "zsh"
       },
       "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "charliermarsh.ruff"
+        "fwcd.kotlin",
+        "vscjava.vscode-gradle"
       ]
     }
   }

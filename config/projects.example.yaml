@@ -9,9 +9,9 @@ projects:
       - "hopin.it"
     repos: []
     pipelines: []
-    provider_policy:
-      default_chat_provider: "litellm"
-      default_code_provider: "codex"
+    providerPolicy:
+      defaultChatProvider: "litellm"
+      defaultCodeProvider: "codex"
 
   - id: aso-fabric
     name: "ASO Fabric"
@@ -24,7 +24,6 @@ projects:
     repos: []
     pipelines:
       - "aso-monitor"
-    provider_policy:
-      default_chat_provider: "litellm"
-      default_code_provider: "codex"
-
+    providerPolicy:
+      defaultChatProvider: "litellm"
+      defaultCodeProvider: "codex"

@@ -8,6 +8,7 @@ containers, provider routing, observability, and measurable pipelines.
 
 - Run reproducibly on a Mac mini or another host through dev containers and
   Docker Compose.
+- Use Kotlin/Ktor for service code.
 - Provide a Slack-first assistant that understands identity, projects, context,
   and long-running tasks.
 - Support multiple AI providers: Codex, Claude, and LiteLLM-routed models.
@@ -37,4 +38,3 @@ cron-friendly, and measurable.
 - [Runtime](docs/RUNTIME.md)
 - [Pipelines](docs/PIPELINES.md)
 - [Decisions](adr/)
-

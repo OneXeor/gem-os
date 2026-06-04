@@ -1,3 +1,7 @@
+x-gem-app: &gem-app
+  image: gem-os-app
+  build: .
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -45,14 +49,13 @@ services:
         condition: service_healthy
 
   provider-router:
-    build: .
-    command: uvicorn services.provider_router.app:app --host 0.0.0.0 --port 8010
+    <<: *gem-app
+    command: java -cp /app/lib/* com.onexeor.gemos.provider.ProviderRouterMainKt
     env_file:
       - .env
     environment:
       GEM_HOME: /app
-      PYTHONPATH: /app/packages:/app
-      DATABASE_URL: postgresql+psycopg://gem:gem@postgres:5432/gem
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       LITELLM_BASE_URL: http://litellm:4000
@@ -67,14 +70,13 @@ services:
         condition: service_started
 
   admin:
-    build: .
-    command: uvicorn services.admin.app:app --host 0.0.0.0 --port 8000
+    <<: *gem-app
+    command: java -cp /app/lib/* com.onexeor.gemos.admin.AdminMainKt
     env_file:
       - .env
     environment:
       GEM_HOME: /app
-      PYTHONPATH: /app/packages:/app
-      DATABASE_URL: postgresql+psycopg://gem:gem@postgres:5432/gem
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       LITELLM_BASE_URL: http://litellm:4000
@@ -85,25 +87,23 @@ services:
         condition: service_started
 
   scheduler:
-    build: .
-    command: python -m services.scheduler.cli --status
+    <<: *gem-app
+    command: java -cp /app/lib/* com.onexeor.gemos.scheduler.SchedulerMainKt --status
     env_file:
       - .env
     environment:
       GEM_HOME: /app
-      PYTHONPATH: /app/packages:/app
     depends_on:
       postgres:
         condition: service_healthy
 
   slack-bot:
-    build: .
-    command: python -m services.slack_bot.app
+    <<: *gem-app
+    command: java -cp /app/lib/* com.onexeor.gemos.scheduler.SchedulerMainKt --status
     env_file:
       - .env
     environment:
       GEM_HOME: /app
-      PYTHONPATH: /app/packages:/app
     profiles:
       - slack
     depends_on:
@@ -119,7 +119,38 @@ services:
       admin:
         condition: service_started
 
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    volumes:
+      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      admin:
+        condition: service_started
+      provider-router:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    env_file:
+      - .env
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-gem}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./ops/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+
 volumes:
   postgres_data:
   redis_data:
   qdrant_data:
+  prometheus_data:
+  grafana_data:

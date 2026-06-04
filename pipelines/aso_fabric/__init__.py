@@ -1,1 +1,0 @@
-"""ASO Fabric pipeline placeholder."""

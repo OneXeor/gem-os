@@ -1,5 +1,5 @@
 COMPOSE := $(shell command -v docker-compose >/dev/null 2>&1 && echo docker-compose || echo "docker compose")
-PYTHON ?= python3
+GRADLE ?= gradle
 
 .PHONY: setup compose-config up down logs ps build test lint admin-health router-health scheduler-status aso-stub
 
@@ -25,10 +25,10 @@ ps:
 	$(COMPOSE) ps
 
 test:
-	PYTHONPATH=packages:. pytest -q
+	$(GRADLE) test
 
 lint:
-	ruff check .
+	$(GRADLE) check
 
 admin-health:
 	curl -fsS http://localhost:8000/health
@@ -37,7 +37,7 @@ router-health:
 	curl -fsS http://localhost:8010/health
 
 scheduler-status:
-	PYTHONPATH=packages:. $(PYTHON) -m services.scheduler.cli --status
+	$(GRADLE) schedulerStatus
 
 aso-stub:
-	PYTHONPATH=packages:. $(PYTHON) -m pipelines.aso_fabric.cli
+	$(GRADLE) asoStub

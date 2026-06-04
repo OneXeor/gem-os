@@ -6,15 +6,13 @@ services:
     command: sleep infinity
     environment:
       GEM_HOME: /workspace/gem-os
-      PYTHONPATH: /workspace/gem-os/packages:/workspace/gem-os
-      DATABASE_URL: postgresql+psycopg://gem:gem@postgres:5432/gem
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       LITELLM_BASE_URL: http://litellm:4000
     volumes:
       - ..:/workspace/gem-os:cached
-      - dev_venv:/workspace/gem-os/.venv
-      - dev_pip_cache:/home/gem/.cache/pip
+      - dev_gradle_cache:/home/gradle/.gradle
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,8 +54,7 @@ services:
       - "6333:6333"
 
 volumes:
-  dev_venv:
-  dev_pip_cache:
+  dev_gradle_cache:
   dev_postgres_data:
   dev_redis_data:
   dev_qdrant_data:

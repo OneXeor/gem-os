@@ -5,8 +5,8 @@
 Development should use a dev container:
 
 - Source code bind-mounted.
-- Python/Node/tooling inside the container.
-- `.venv` stored in a named Docker volume.
+- JDK/Gradle tooling inside the container.
+- Gradle cache stored in a named Docker volume.
 - Qdrant/Redis/Postgres exposed as compose services.
 - Host SSH or provider credentials mounted only through local overrides.
 
@@ -35,17 +35,22 @@ postgres
 redis
 qdrant
 litellm
+provider-router
 slack-bot
 scheduler
 admin
+prometheus
+grafana
 cloudflared
 ```
 
 ## Ports
 
 - Admin: `8000`
+- Provider router: `8010`
 - LiteLLM: `4000`
 - Qdrant: `6333`
+- Prometheus: `9090`
+- Grafana: `3000`
 - Postgres: internal only by default
 - Redis: internal only by default
-

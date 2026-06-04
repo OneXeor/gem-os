@@ -18,6 +18,9 @@ scheduler ---> pipelines ---> artifacts/logs/results
 admin web app <--- db/log store/status
   |
   v
+prometheus -> grafana
+  |
+  v
 cloudflared -> public admin/bot endpoints when needed
 ```
 
@@ -82,6 +85,15 @@ Responsibilities:
 - Expose selected local services through tunnels.
 - Keep public ingress independent from the app services.
 
+### observability
+
+Responsibilities:
+- Expose Ktor service metrics through Micrometer.
+- Scrape service metrics with Prometheus.
+- Show system status and operational dashboards in Grafana.
+- Keep business pipeline statistics backed by persisted run data, not only
+  process metrics.
+
 ### data stores
 
 Recommended MVP:
@@ -139,4 +151,3 @@ Run fields:
 - All provider calls are logged with enough metadata to debug cost and failures.
 - Code-writing agents run in worktrees/branches only.
 - Host runners execute constrained commands, not arbitrary shell from Slack.
-
