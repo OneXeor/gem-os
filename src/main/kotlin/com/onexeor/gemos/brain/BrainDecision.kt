@@ -1,6 +1,7 @@
 package com.onexeor.gemos.brain
 
 import com.onexeor.gemos.core.GemConfig
+import com.onexeor.gemos.core.run.ChildRunSummary
 import com.onexeor.gemos.core.PipelineConfig
 import com.onexeor.gemos.core.ProjectConfig
 import kotlinx.serialization.Serializable
@@ -16,6 +17,7 @@ data class BrainRequest(
 @Serializable
 data class BrainDecisionResponse(
     val runId: String? = null,
+    val childRun: ChildRunSummary? = null,
     val status: String? = null,
     val decision: String,
     val route: String,

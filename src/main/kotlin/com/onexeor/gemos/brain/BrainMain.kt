@@ -26,6 +26,7 @@ fun main() {
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     val json = Json { prettyPrint = false }
     val runs = RunRepository(cfg.settings)
+    val dispatcher = BrainDispatcher(runs, json)
     runs.migrate()
 
     embeddedServer(Netty, host = "0.0.0.0", port = cfg.settings.brainPort) {
@@ -56,7 +57,8 @@ fun main() {
                     route = decision.route,
                     decisionJson = json.encodeToString(decision),
                 )
-                call.respond(decision.copy(runId = run.id, status = "created"))
+                val childRun = dispatcher.dispatch(run.id, request, decision)
+                call.respond(decision.copy(runId = run.id, childRun = childRun, status = "created"))
             }
             get("/metrics") {
                 call.respondText(prometheus.scrape())

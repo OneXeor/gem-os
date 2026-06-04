@@ -32,6 +32,44 @@ class RunRepository(private val settings: Settings) {
             }
         }
 
+    fun createChildRun(
+        parentRunId: String,
+        kind: String,
+        userId: String?,
+        projectId: String?,
+        pipelineId: String?,
+        provider: String?,
+        route: String?,
+        inputJson: String,
+    ): RunRecord = withConnection { conn ->
+        inTransaction(conn) {
+            val id = "run_${UUID.randomUUID()}"
+            conn.prepareStatement(
+                """
+                insert into runs (
+                    id, parent_run_id, kind, status, user_id, project_id,
+                    pipeline_id, provider, route, input_json
+                )
+                values (?, ?, ?, 'created', ?, ?, ?, ?, ?, cast(? as jsonb))
+                """.trimIndent(),
+            ).use { stmt ->
+                stmt.setString(1, id)
+                stmt.setString(2, parentRunId)
+                stmt.setString(3, kind)
+                stmt.setString(4, userId)
+                stmt.setString(5, projectId)
+                stmt.setString(6, pipelineId)
+                stmt.setString(7, provider)
+                stmt.setString(8, route)
+                stmt.setString(9, inputJson)
+                stmt.executeUpdate()
+            }
+            appendEvent(conn, id, "info", "Child run created.", """{"parentRunId":"$parentRunId"}""")
+            appendEvent(conn, parentRunId, "info", "Child run created.", """{"childRunId":"$id","kind":"$kind"}""")
+            getRun(conn, id) ?: error("Created child run was not readable: $id")
+        }
+    }
+
     fun storeDecision(
         runId: String,
         projectId: String?,
@@ -83,6 +121,23 @@ class RunRepository(private val settings: Settings) {
     }
 
     fun getRun(id: String): RunRecord? = withConnection { conn -> getRun(conn, id) }
+
+    fun listChildRuns(parentRunId: String): List<RunRecord> = withConnection { conn ->
+        conn.prepareStatement(
+            """
+            select * from runs
+            where parent_run_id = ?
+            order by created_at asc
+            """.trimIndent(),
+        ).use { stmt ->
+            stmt.setString(1, parentRunId)
+            stmt.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next()) add(rs.toRunRecord())
+                }
+            }
+        }
+    }
 
     fun listEvents(runId: String): List<RunEventRecord> = withConnection { conn ->
         conn.prepareStatement(
@@ -145,6 +200,7 @@ class RunRepository(private val settings: Settings) {
     private fun ResultSet.toRunRecord(): RunRecord =
         RunRecord(
             id = getString("id"),
+            parentRunId = getString("parent_run_id"),
             kind = getString("kind"),
             status = getString("status"),
             userId = getString("user_id"),

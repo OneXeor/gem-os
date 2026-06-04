@@ -15,6 +15,7 @@ Slack request
   -> brain classifies task
   -> brain chooses capability
   -> create run
+  -> create child run for selected capability
   -> execute pipeline/agent/tool/provider
   -> store logs/artifacts/results
   -> report back to Slack/admin
@@ -49,6 +50,7 @@ with the selected provider and capability recorded.
 ## Safety
 
 - Long-running work always becomes a run.
+- Brain decisions create parent runs; selected capabilities create child runs.
 - Code agents run non-interactively.
 - Code agents run in explicit repos/worktrees/branches.
 - Pipelines and agents stream logs and produce artifacts.

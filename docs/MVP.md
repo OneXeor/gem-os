@@ -69,5 +69,6 @@ route work to AI providers, and execute one measurable automation pipeline.
 - Slack DM `run aso` starts ASO Fabric and returns a run ID.
 - Slack can ask Gem for work and Gem can choose the correct pipeline, agent, or
   provider with Gem/Viktor/project context.
+- Brain decisions and selected capabilities are visible as parent/child runs.
 - Admin app shows the same run, logs, provider used, cost, and result.
 - Scheduler can run ASO Fabric by cron.

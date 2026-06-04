@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RunRecord(
     val id: String,
+    val parentRunId: String? = null,
     val kind: String,
     val status: String,
     val userId: String? = null,
@@ -19,6 +20,16 @@ data class RunRecord(
     val createdAt: String,
     val startedAt: String? = null,
     val finishedAt: String? = null,
+)
+
+@Serializable
+data class ChildRunSummary(
+    val id: String,
+    val kind: String,
+    val status: String,
+    val route: String? = null,
+    val provider: String? = null,
+    val pipelineId: String? = null,
 )
 
 @Serializable

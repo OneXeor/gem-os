@@ -108,6 +108,10 @@ fun main() {
                     val id = call.parameters["id"].orEmpty()
                     call.respond(runs.listEvents(id))
                 }
+                get("/children") {
+                    val id = call.parameters["id"].orEmpty()
+                    call.respond(runs.listChildRuns(id))
+                }
             }
             get("/metrics") {
                 call.respondText(prometheus.scrape())
