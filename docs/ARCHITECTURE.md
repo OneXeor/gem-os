@@ -44,14 +44,13 @@ Non-goals:
 Responsibilities:
 - Normalize provider calls.
 - Route chat calls to LiteLLM or direct provider APIs.
-- Route code-agent calls to direct Codex or Claude Code adapters.
+- Route code-agent calls to direct CLI adapters.
 - Track provider, model, tokens, cost, latency, and errors.
 
 Provider classes:
 - `chat`: text/vision/reasoning calls that do not edit local repos directly.
 - `code_agent`: long-running coding sessions that can read/write repos.
-  These bypass LiteLLM and use direct non-interactive Codex or Claude Code
-  adapters.
+  These bypass LiteLLM and use direct non-interactive CLI adapters.
 
 ### scheduler
 
@@ -88,7 +87,9 @@ Non-goals:
 ### code agents
 
 Responsibilities:
-- Run Codex and Claude Code in non-interactive mode.
+- Run Codex in non-interactive mode as the default code-agent path.
+- Keep Claude Code headless as an optional disabled adapter unless explicitly
+  enabled for paid Agent SDK credit usage.
 - Use host-owned CLI/API authentication rather than LiteLLM.
 - Execute inside explicit worktrees/branches.
 - Stream logs and final results back to scheduler/admin/Slack.
@@ -138,7 +139,8 @@ Host-controlled:
 - Android emulator initially.
 - Local IDE/editor.
 - Optional provider CLI auth files.
-- Codex and Claude Code CLI authentication.
+- Codex CLI authentication.
+- Optional Claude Code CLI/API authentication if headless usage is enabled.
 
 Reason: Linux containers cannot run iOS simulator. Android emulator can run in
 containers, but on Mac it adds complexity before the core system is stable.

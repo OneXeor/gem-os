@@ -2,7 +2,7 @@
 
 Gem is the controller of the system.
 
-Slack is an interface. Codex, Claude Code, LiteLLM, pipelines, tools, project
+Slack is an interface. Codex, LiteLLM, pipelines, tools, project
 registries, memories, and host runners are capabilities. Gem decides which
 capabilities to use for a task.
 
@@ -23,17 +23,21 @@ Slack request
 ## Capability Types
 
 - `pipeline`: repeatable workflows such as ASO monitoring.
-- `code_agent`: non-interactive Codex or Claude Code sessions.
+- `code_agent`: non-interactive Codex sessions by default; optional Claude Code
+  headless sessions only when explicitly enabled and budgeted.
 - `chat`: bounded model calls through LiteLLM.
 - `tool`: deterministic internal or host-runner commands.
 - `memory`: project/user/system context retrieval.
 
 ## Planner Role
 
-Codex or Claude Code can be used as a planner when a request needs reasoning
-over context. The planner does not own the system. It receives a structured
-context package from Gem and returns a plan, selected capability, or execution
-result depending on the task.
+Codex is the default planner when a request needs reasoning over context. The
+planner does not own the system. It receives a structured context package from
+Gem and returns a plan, selected capability, or execution result depending on
+the task.
+
+Claude Code headless can be added as an explicit paid fallback later, but Gem
+must not depend on it for default operation.
 
 ## Viktor Emulation
 

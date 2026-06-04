@@ -53,7 +53,7 @@ data class ProviderPolicy(
 data class OrchestrationPolicy(
     val mode: String = "capability-router",
     val plannerDefault: String = "codex",
-    val plannerFallback: String? = "claude",
+    val plannerFallback: String? = null,
     val defaultChatRoute: String = "litellm",
     val defaultCodeRoute: String = "codex",
     val defaultPipelineRoute: String = "scheduler",
@@ -89,6 +89,9 @@ data class CodeProviderOption(
     val mode: String,
     val command: String? = null,
     val auth: String = "host",
+    val enabled: Boolean = true,
+    val costProfile: String = "default",
+    val notes: String? = null,
     val nonInteractive: Boolean = true,
     val defaultArgs: List<String> = emptyList(),
     val defaultModel: String = "latest",

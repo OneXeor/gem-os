@@ -47,25 +47,26 @@ Exit criteria:
 - Slack bot can answer who Gem is, who Viktor is, and which projects exist.
 - Bot can resolve a user message to a project when enough context exists.
 
-## Stage 3: Provider Router
+## Stage 3: Capability Router And Providers
 
-Purpose: support Claude, Codex, and LiteLLM without hardwiring pipelines to one
-provider.
+Purpose: route work to pipelines, tools, Codex, LiteLLM, and optional providers
+without hardwiring workflows to one backend.
 
 Deliverables:
 - Provider registry.
 - Chat provider interface.
 - Code-agent provider interface.
 - Direct non-interactive Codex adapter.
-- Direct non-interactive Claude Code adapter.
+- Optional Claude Code adapter marked disabled by default because `claude -p`
+  uses separate Agent SDK credits starting June 15, 2026.
 - Cost/token tracking.
 - Provider health checks.
 - Per-project defaults and overrides.
 
 Exit criteria:
-- Slack can run the same simple prompt through Claude, Codex, or LiteLLM by
-  explicit choice.
-- Implementation jobs can run Codex or Claude Code directly without LiteLLM.
+- Slack/Gem can route a request to a pipeline, Codex, or LiteLLM by capability.
+- Implementation jobs can run Codex directly without LiteLLM.
+- Claude Code is not required for MVP or default operation.
 - Run records include provider, model, tokens, cost, and status.
 
 ## Stage 4: Slack Bot

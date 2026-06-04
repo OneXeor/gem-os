@@ -2,7 +2,7 @@ providers:
   orchestration:
     mode: "capability-router"
     plannerDefault: "codex"
-    plannerFallback: "claude"
+    plannerFallback: null
     defaultChatRoute: "litellm"
     defaultCodeRoute: "codex"
     defaultPipelineRoute: "scheduler"
@@ -33,6 +33,9 @@ providers:
         mode: "direct-cli"
         command: "claude"
         auth: "host"
+        enabled: false
+        costProfile: "metered-agent-sdk-credit"
+        notes: "Optional only: claude -p moves to separate Agent SDK credits on 2026-06-15."
         nonInteractive: true
         defaultArgs:
           - "-p"

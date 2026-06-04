@@ -31,7 +31,8 @@ route work to AI providers, and execute one measurable automation pipeline.
      execution paths.
    - One abstraction for cheap bounded chat/model calls.
    - One abstraction for code-agent calls.
-   - Initial providers: Codex and Claude as configured backends.
+   - Codex as the default direct code-agent backend.
+   - Claude Code as an optional disabled backend, not required for MVP.
    - LiteLLM as shared model gateway for auxiliary non-code-agent calls.
 
 5. Admin web app
