@@ -1,158 +1,51 @@
 # Gem OS Blueprint
 
-Gem OS is the orchestration layer. It receives requests, understands context,
-chooses the right capability, creates a run graph, executes work through
-pipelines/agents/tools, and reports the result.
+Gem OS is the orchestration layer. It receives intent, builds context, chooses
+the right capability, creates a run graph, executes work through pipelines,
+agents, and tools, then reports the result.
 
-## System Map
+![Gem OS Blueprint](assets/gem-os-blueprint.svg)
 
-```mermaid
-flowchart TB
-    subgraph interfaces["Interfaces"]
-        slack["Slack"]
-        adminUi["Admin UI/API"]
-        cron["Cron"]
-        manual["Manual CLI/API"]
-    end
+## How To Read It
 
-    subgraph control["Gem Control Plane"]
-        brain["Brain\ncontext + capability router"]
-        runs["Run Graph\nparent + child runs"]
-        scheduler["Scheduler / Worker"]
-        providerRouter["Provider Router"]
-    end
+Read the blueprint left to right:
 
-    subgraph context["Context Sources"]
-        identity["Identity\nGem + Viktor"]
-        projects["Project Registry"]
-        memory["Memory Retrieval"]
-        indexed["Knowledge Index\nrepos + docs + code + notes"]
-    end
+1. A request enters through Slack, cron, admin, or manual API.
+2. Brain builds context from identity, projects, memory, and indexed knowledge.
+3. Brain creates a parent run and chooses the capability.
+4. Scheduler or Provider Router creates and executes child runs.
+5. State, vectors, artifacts, and metrics are persisted.
+6. Admin, Grafana, logs, and Slack reports expose what happened.
 
-    subgraph capabilities["Capabilities"]
-        aso["ASO Factory\nexternal pipeline"]
-        indexing["Knowledge Indexing\nrepo/docs/code/Obsidian"]
-        implementation["Implementation Workflow"]
-        codex["Codex CLI\nnon-interactive"]
-        claude["Claude Code\noptional disabled"]
-        litellm["LiteLLM\nbounded chat gateway"]
-        tools["Tools\nGitHub + checkout + host runners"]
-    end
+## Core Idea
 
-    subgraph storage["Storage"]
-        postgres["Postgres\nruns + events + operational state"]
-        qdrant["Qdrant\nvectors"]
-        redis["Redis\nqueue/cache/locks"]
-        files["Filesystem\nrepos + artifacts"]
-    end
+Gem is not one LLM. Gem is the control plane that decides which capability to
+use for the current job.
 
-    subgraph observability["Observability"]
-        prometheus["Prometheus"]
-        grafana["Grafana"]
-        slackReports["Slack Reports"]
-        logs["Run Logs / Artifacts"]
-    end
+The LLM is only one part of the system:
 
-    slack --> brain
-    cron --> scheduler
-    manual --> brain
-    adminUi --> runs
+- Codex CLI is the default non-interactive code/planning executor.
+- LiteLLM is for bounded model calls, not expensive code-agent execution.
+- ASO Factory is an external pipeline Gem can run and monitor.
+- Knowledge indexing gives Gem project memory before it plans or executes.
+- Postgres stores operational truth: runs, events, status, and results.
+- Qdrant stores searchable knowledge: repos, docs, code, and notes.
 
-    identity --> brain
-    projects --> brain
-    memory --> brain
-    indexed --> brain
+## Execution Rule
 
-    brain --> runs
-    brain --> providerRouter
-    brain --> scheduler
-    runs --> scheduler
+Every meaningful action is represented as a run.
 
-    scheduler --> aso
-    scheduler --> indexing
-    scheduler --> implementation
-    providerRouter --> codex
-    providerRouter --> claude
-    providerRouter --> litellm
-    scheduler --> tools
-
-    aso --> files
-    indexing --> qdrant
-    indexing --> files
-    runs --> postgres
-    scheduler --> redis
-    tools --> files
-
-    postgres --> adminUi
-    qdrant --> memory
-    files --> logs
-    runs --> logs
-
-    brain --> slackReports
-    adminUi --> prometheus
-    brain --> prometheus
-    providerRouter --> prometheus
-    prometheus --> grafana
-```
-
-## Decision Flow
-
-```mermaid
-flowchart LR
-    request["Slack / cron / manual request"]
-    context["Build context\nuser + project + memory"]
-    parent["Create parent run\nbrain_decision"]
-    decide["Brain decides capability"]
-    child["Create child run"]
-    execute["Scheduler / provider executes"]
-    persist["Persist logs, result, artifacts"]
-    report["Report to Slack/Admin"]
-
-    request --> context --> parent --> decide --> child --> execute --> persist --> report
-
-    decide --> pipeline["pipeline"]
-    decide --> codeAgent["code_agent"]
-    decide --> planner["planner"]
-    decide --> chat["chat"]
-    decide --> tool["tool"]
-
-    pipeline --> child
-    codeAgent --> child
-    planner --> child
-    chat --> child
-    tool --> child
-```
-
-## Knowledge Flow
-
-```mermaid
-flowchart LR
-    discover["Discover sources\nGitHub + repos + Obsidian"]
-    fetch["Fetch/update content"]
-    chunk["Chunk docs/code/notes"]
-    embed["Embed\nBGE-M3"]
-    store["Store vectors\nQdrant"]
-    retrieve["Retrieve context\nbefore planning"]
-    brain["Brain"]
-
-    discover --> fetch --> chunk --> embed --> store --> retrieve --> brain
-```
-
-## Main Rules
-
-- Gem is not one LLM. Gem chooses and controls capabilities.
-- Every meaningful action starts as a run.
-- Brain decisions are parent runs; selected capabilities are child runs.
-- Codex is the default non-interactive planner/code-agent path.
-- Claude Code headless is optional and disabled by default.
-- LiteLLM is for bounded chat/model calls, not code-agent execution.
-- Qdrant stores indexed knowledge; Postgres stores operational truth.
+- Brain decisions are parent runs.
+- Selected capabilities are child runs.
+- Child runs can be pipelines, code-agent runs, planner runs, chat calls, or
+  tool executions.
+- Scheduler and provider adapters execute child runs and update the run store.
 
 ## Near-Term Build Order
 
 1. Scheduler executes child runs.
-2. Knowledge indexing pipelines.
-3. Brain retrieval from Qdrant.
-4. Slack bot connected to Brain.
-5. ASO Factory execution through scheduler.
+2. ASO Factory runs through scheduler.
+3. Knowledge indexing pipelines.
+4. Brain retrieval from Qdrant.
+5. Slack bot connected to Brain.
 6. Codex host-runner adapter.

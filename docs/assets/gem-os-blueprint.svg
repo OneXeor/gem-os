@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900" role="img" aria-labelledby="title desc">
+  <title id="title">Gem OS Blueprint</title>
+  <desc id="desc">Layered architecture blueprint for Gem OS showing interfaces, control plane, context, capabilities, storage, and observability.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#435166"/>
+    </marker>
+    <marker id="soft-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a8699"/>
+    </marker>
+    <style>
+      .bg { fill: #f7f8fb; }
+      .title { font: 700 34px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+      .subtitle { font: 400 16px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #5c677a; }
+      .section-label { font: 700 15px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: .06em; fill: #4d5a6e; }
+      .node-title { font: 700 17px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+      .node-text { font: 400 13px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #566174; }
+      .small { font: 400 12px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #627086; }
+      .boundary { fill: #ffffff; stroke: #d9dee8; stroke-width: 1.5; rx: 18; }
+      .control { fill: #eaf2ff; stroke: #7da8e8; stroke-width: 1.4; rx: 12; }
+      .interface { fill: #eef8f3; stroke: #7abf9b; stroke-width: 1.4; rx: 12; }
+      .context { fill: #fff6e4; stroke: #d9a441; stroke-width: 1.4; rx: 12; }
+      .capability { fill: #f3efff; stroke: #a28bdc; stroke-width: 1.4; rx: 12; }
+      .storage { fill: #eef1f5; stroke: #a9b3c2; stroke-width: 1.4; rx: 12; }
+      .observe { fill: #fff0ee; stroke: #dc8c7d; stroke-width: 1.4; rx: 12; }
+      .line { fill: none; stroke: #435166; stroke-width: 2; marker-end: url(#arrow); }
+      .soft-line { fill: none; stroke: #7a8699; stroke-width: 1.6; stroke-dasharray: 5 5; marker-end: url(#soft-arrow); }
+      .note { fill: #ffffff; stroke: #d9dee8; stroke-width: 1.2; rx: 12; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1280" height="900"/>
+
+  <text class="title" x="52" y="58">Gem OS Blueprint</text>
+  <text class="subtitle" x="52" y="86">Gem receives intent, builds context, chooses capabilities, executes runs, and reports measurable results.</text>
+
+  <rect class="boundary" x="42" y="125" width="218" height="460"/>
+  <text class="section-label" x="68" y="156">INTERFACES</text>
+
+  <rect class="interface" x="68" y="185" width="166" height="70"/>
+  <text class="node-title" x="92" y="214">Slack Bot</text>
+  <text class="node-text" x="92" y="236">human requests</text>
+
+  <rect class="interface" x="68" y="277" width="166" height="70"/>
+  <text class="node-title" x="92" y="306">Admin Web</text>
+  <text class="node-text" x="92" y="328">status, runs, stats</text>
+
+  <rect class="interface" x="68" y="369" width="166" height="70"/>
+  <text class="node-title" x="92" y="398">Cron</text>
+  <text class="node-text" x="92" y="420">scheduled work</text>
+
+  <rect class="interface" x="68" y="461" width="166" height="70"/>
+  <text class="node-title" x="92" y="490">Manual API</text>
+  <text class="node-text" x="92" y="512">local commands</text>
+
+  <rect class="boundary" x="310" y="125" width="390" height="460"/>
+  <text class="section-label" x="336" y="156">GEM CONTROL PLANE</text>
+
+  <rect class="control" x="338" y="185" width="150" height="82"/>
+  <text class="node-title" x="368" y="215">Brain</text>
+  <text class="node-text" x="364" y="238">intent router</text>
+  <text class="node-text" x="361" y="256">context builder</text>
+
+  <rect class="control" x="522" y="185" width="150" height="82"/>
+  <text class="node-title" x="553" y="215">Run Graph</text>
+  <text class="node-text" x="554" y="238">parent runs</text>
+  <text class="node-text" x="555" y="256">child runs</text>
+
+  <rect class="control" x="338" y="319" width="150" height="82"/>
+  <text class="node-title" x="361" y="349">Scheduler</text>
+  <text class="node-text" x="359" y="372">queue consumer</text>
+  <text class="node-text" x="365" y="390">execution state</text>
+
+  <rect class="control" x="522" y="319" width="150" height="82"/>
+  <text class="node-title" x="548" y="349">Provider</text>
+  <text class="node-title" x="552" y="369">Router</text>
+  <text class="node-text" x="552" y="391">LLM gateway</text>
+
+  <rect class="note" x="356" y="454" width="298" height="88"/>
+  <text class="node-title" x="383" y="485">Rule</text>
+  <text class="node-text" x="383" y="508">Every meaningful action is a run.</text>
+  <text class="node-text" x="383" y="529">Brain decides; workers execute.</text>
+
+  <rect class="boundary" x="748" y="125" width="230" height="460"/>
+  <text class="section-label" x="774" y="156">CONTEXT</text>
+
+  <rect class="context" x="774" y="185" width="178" height="70"/>
+  <text class="node-title" x="805" y="214">Identity</text>
+  <text class="node-text" x="803" y="236">Viktor, Gem, teams</text>
+
+  <rect class="context" x="774" y="277" width="178" height="70"/>
+  <text class="node-title" x="801" y="306">Projects</text>
+  <text class="node-text" x="801" y="328">Hopin.it + personal</text>
+
+  <rect class="context" x="774" y="369" width="178" height="70"/>
+  <text class="node-title" x="807" y="398">Memory</text>
+  <text class="node-text" x="803" y="420">decisions, notes</text>
+
+  <rect class="context" x="774" y="461" width="178" height="70"/>
+  <text class="node-title" x="801" y="490">Knowledge</text>
+  <text class="node-text" x="799" y="512">repos, docs, code</text>
+
+  <rect class="boundary" x="1026" y="125" width="212" height="460"/>
+  <text class="section-label" x="1052" y="156">CAPABILITIES</text>
+
+  <rect class="capability" x="1052" y="185" width="160" height="62"/>
+  <text class="node-title" x="1083" y="213">ASO</text>
+  <text class="node-text" x="1081" y="234">Factory pipeline</text>
+
+  <rect class="capability" x="1052" y="265" width="160" height="62"/>
+  <text class="node-title" x="1083" y="293">Indexing</text>
+  <text class="node-text" x="1072" y="314">GitHub, code, notes</text>
+
+  <rect class="capability" x="1052" y="345" width="160" height="62"/>
+  <text class="node-title" x="1082" y="373">Codex</text>
+  <text class="node-text" x="1076" y="394">non-interactive</text>
+
+  <rect class="capability" x="1052" y="425" width="160" height="62"/>
+  <text class="node-title" x="1088" y="453">LiteLLM</text>
+  <text class="node-text" x="1074" y="474">bounded chat calls</text>
+
+  <rect class="capability" x="1052" y="505" width="160" height="52"/>
+  <text class="node-title" x="1085" y="536">Tools</text>
+
+  <rect class="boundary" x="42" y="635" width="602" height="178"/>
+  <text class="section-label" x="68" y="666">OPERATIONAL STORAGE</text>
+
+  <rect class="storage" x="68" y="694" width="132" height="72"/>
+  <text class="node-title" x="97" y="724">Postgres</text>
+  <text class="node-text" x="93" y="746">runs, events</text>
+
+  <rect class="storage" x="225" y="694" width="132" height="72"/>
+  <text class="node-title" x="262" y="724">Redis</text>
+  <text class="node-text" x="254" y="746">queue, locks</text>
+
+  <rect class="storage" x="382" y="694" width="132" height="72"/>
+  <text class="node-title" x="415" y="724">Qdrant</text>
+  <text class="node-text" x="414" y="746">vectors</text>
+
+  <rect class="storage" x="539" y="694" width="76" height="72"/>
+  <text class="node-title" x="552" y="724">Files</text>
+  <text class="node-text" x="551" y="746">repos</text>
+
+  <rect class="boundary" x="684" y="635" width="554" height="178"/>
+  <text class="section-label" x="710" y="666">OBSERVABILITY AND FEEDBACK</text>
+
+  <rect class="observe" x="710" y="694" width="132" height="72"/>
+  <text class="node-title" x="743" y="724">Metrics</text>
+  <text class="node-text" x="735" y="746">Prometheus</text>
+
+  <rect class="observe" x="868" y="694" width="132" height="72"/>
+  <text class="node-title" x="899" y="724">Grafana</text>
+  <text class="node-text" x="898" y="746">dashboards</text>
+
+  <rect class="observe" x="1026" y="694" width="84" height="72"/>
+  <text class="node-title" x="1047" y="724">Logs</text>
+  <text class="node-text" x="1045" y="746">artifacts</text>
+
+  <rect class="observe" x="1130" y="694" width="82" height="72"/>
+  <text class="node-title" x="1148" y="724">Slack</text>
+  <text class="node-text" x="1145" y="746">reports</text>
+
+  <path class="line" d="M234 220 C282 220 290 226 338 226"/>
+  <path class="line" d="M234 312 C282 312 290 230 338 230"/>
+  <path class="line" d="M234 404 C282 404 290 356 338 356"/>
+  <path class="line" d="M234 496 C282 496 290 238 338 238"/>
+
+  <path class="line" d="M488 226 L522 226"/>
+  <path class="line" d="M597 267 C597 289 597 297 597 319"/>
+  <path class="line" d="M522 356 L488 356"/>
+  <path class="line" d="M488 238 C515 272 522 306 522 348"/>
+
+  <path class="soft-line" d="M774 220 C718 220 710 220 672 220"/>
+  <path class="soft-line" d="M774 312 C718 312 710 235 672 235"/>
+  <path class="soft-line" d="M774 404 C718 404 710 250 672 250"/>
+  <path class="soft-line" d="M774 496 C718 496 710 265 672 265"/>
+
+  <path class="line" d="M672 356 C842 356 890 216 1052 216"/>
+  <path class="line" d="M672 360 C842 360 890 296 1052 296"/>
+  <path class="line" d="M672 364 C842 364 890 376 1052 376"/>
+  <path class="line" d="M672 368 C842 368 890 456 1052 456"/>
+  <path class="line" d="M672 372 C842 372 890 531 1052 531"/>
+
+  <path class="soft-line" d="M597 401 C597 610 145 610 134 694"/>
+  <path class="soft-line" d="M413 401 C413 610 291 610 291 694"/>
+  <path class="soft-line" d="M863 531 C863 610 448 610 448 694"/>
+  <path class="soft-line" d="M1132 557 C1132 610 577 610 577 694"/>
+
+  <path class="soft-line" d="M488 216 C620 106 740 106 776 694"/>
+  <path class="soft-line" d="M672 341 C764 580 860 600 934 694"/>
+  <path class="soft-line" d="M597 401 C690 575 930 590 1068 694"/>
+  <path class="soft-line" d="M488 215 C720 68 1110 610 1171 694"/>
+
+  <text class="small" x="52" y="854">Read left to right: request enters Gem, Brain creates a parent run, Scheduler/Provider executes child runs, state is stored, metrics and reports close the loop.</text>
+</svg>
