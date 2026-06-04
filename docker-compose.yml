@@ -1,0 +1,125 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gem
+      POSTGRES_PASSWORD: gem
+      POSTGRES_DB: gem
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gem -d gem"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  qdrant:
+    image: qdrant/qdrant:v1.13.4
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    command: ["--host", "0.0.0.0", "--port", "4000"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  provider-router:
+    build: .
+    command: uvicorn services.provider_router.app:app --host 0.0.0.0 --port 8010
+    env_file:
+      - .env
+    environment:
+      GEM_HOME: /app
+      PYTHONPATH: /app/packages:/app
+      DATABASE_URL: postgresql+psycopg://gem:gem@postgres:5432/gem
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      LITELLM_BASE_URL: http://litellm:4000
+    ports:
+      - "8010:8010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+
+  admin:
+    build: .
+    command: uvicorn services.admin.app:app --host 0.0.0.0 --port 8000
+    env_file:
+      - .env
+    environment:
+      GEM_HOME: /app
+      PYTHONPATH: /app/packages:/app
+      DATABASE_URL: postgresql+psycopg://gem:gem@postgres:5432/gem
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      LITELLM_BASE_URL: http://litellm:4000
+    ports:
+      - "8000:8000"
+    depends_on:
+      provider-router:
+        condition: service_started
+
+  scheduler:
+    build: .
+    command: python -m services.scheduler.cli --status
+    env_file:
+      - .env
+    environment:
+      GEM_HOME: /app
+      PYTHONPATH: /app/packages:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  slack-bot:
+    build: .
+    command: python -m services.slack_bot.app
+    env_file:
+      - .env
+    environment:
+      GEM_HOME: /app
+      PYTHONPATH: /app/packages:/app
+    profiles:
+      - slack
+    depends_on:
+      provider-router:
+        condition: service_started
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TUNNEL_TOKEN}
+    profiles:
+      - tunnel
+    depends_on:
+      admin:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
