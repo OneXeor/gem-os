@@ -1,11 +1,41 @@
 # Provider Strategy
 
-Gem uses two provider paths.
+Gem is an orchestrator. It understands identity, projects, memory, pipelines,
+tools, and available agents, then chooses the correct execution path for each
+task.
+
+No single provider is "Gem." Codex, Claude Code, LiteLLM, pipelines, and future
+agents are capabilities Gem can leverage.
+
+## Slack/Gem Orchestration Path
+
+```text
+Slack -> Gem context builder -> capability router -> pipeline / agent / tool / provider
+```
+
+The router should consider:
+- User identity and preferences.
+- Project and repo context.
+- Available pipelines.
+- Available direct agents.
+- Required tools.
+- Cost and latency.
+- Safety level.
+- Whether the task needs a durable run ID, branch, worktree, or cron schedule.
+
+Planner defaults:
+- primary planner: `codex`
+- fallback planner: `claude`
+- mode: capability router
+
+The prompt/context for any selected agent must include Gem identity, Viktor
+profile, project context, relevant memory/notes, task instructions, safety
+constraints, and expected output format.
 
 ## Chat Path
 
-Chat, summarization, classification, and normal prompt/response workloads go
-through LiteLLM.
+Cheap, bounded chat, summarization, classification, and routing workloads can
+go through LiteLLM when repo-level code-agent execution is unnecessary.
 
 Gem services know only:
 

@@ -11,7 +11,8 @@ containers, provider routing, observability, and measurable pipelines.
 - Use Kotlin/Ktor for service code.
 - Provide a Slack-first assistant that understands identity, projects, context,
   and long-running tasks.
-- Support multiple AI providers: Codex, Claude, and LiteLLM-routed models.
+- Orchestrate pipelines, agents, tools, and providers through Gem instead of
+  treating any single model or CLI as the whole system.
 - Expose system health, runs, logs, cost, and pipeline statistics through an
   admin web app.
 - Automate useful pipelines before risky code-writing workflows.
@@ -23,7 +24,7 @@ containers, provider routing, observability, and measurable pipelines.
 The MVP proves this loop:
 
 ```text
-Slack message -> Gem identity/context -> provider router -> pipeline run
+Slack message -> Gem identity/context -> selected pipeline/agent/provider
               -> persisted logs/costs -> admin status -> Slack result
 ```
 
@@ -35,6 +36,7 @@ cron-friendly, and measurable.
 - [MVP](docs/MVP.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Orchestration](docs/ORCHESTRATION.md)
 - [Runtime](docs/RUNTIME.md)
 - [Pipelines](docs/PIPELINES.md)
 - [Decisions](adr/)

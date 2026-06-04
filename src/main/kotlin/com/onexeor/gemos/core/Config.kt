@@ -50,6 +50,16 @@ data class ProviderPolicy(
 )
 
 @Serializable
+data class OrchestrationPolicy(
+    val mode: String = "capability-router",
+    val plannerDefault: String = "codex",
+    val plannerFallback: String? = "claude",
+    val defaultChatRoute: String = "litellm",
+    val defaultCodeRoute: String = "codex",
+    val defaultPipelineRoute: String = "scheduler",
+)
+
+@Serializable
 data class ProjectConfig(
     val id: String,
     val name: String,
@@ -98,6 +108,7 @@ data class CodeAgentProviders(
 
 @Serializable
 data class ProvidersRoot(
+    val orchestration: OrchestrationPolicy = OrchestrationPolicy(),
     val chat: ChatProviders = ChatProviders(),
     val codeAgent: CodeAgentProviders = CodeAgentProviders(),
 )

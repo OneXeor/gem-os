@@ -26,10 +26,13 @@ route work to AI providers, and execute one measurable automation pipeline.
    - Active project selection.
 
 4. Provider routing
-   - One abstraction for chat/model calls.
+   - Gem routes Slack requests through a capability router.
+   - Pipelines, direct code agents, tools, and chat providers are all available
+     execution paths.
+   - One abstraction for cheap bounded chat/model calls.
    - One abstraction for code-agent calls.
    - Initial providers: Codex and Claude as configured backends.
-   - LiteLLM as shared model gateway for non-code-agent calls.
+   - LiteLLM as shared model gateway for auxiliary non-code-agent calls.
 
 5. Admin web app
    - Service health.
@@ -61,6 +64,7 @@ route work to AI providers, and execute one measurable automation pipeline.
 - Slack DM `status` returns live service state.
 - Slack DM `projects` lists configured projects.
 - Slack DM `run aso` starts ASO Fabric and returns a run ID.
+- Slack can ask Gem for work and Gem can choose the correct pipeline, agent, or
+  provider with Gem/Viktor/project context.
 - Admin app shows the same run, logs, provider used, cost, and result.
 - Scheduler can run ASO Fabric by cron.
-

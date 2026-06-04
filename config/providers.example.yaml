@@ -1,4 +1,12 @@
 providers:
+  orchestration:
+    mode: "capability-router"
+    plannerDefault: "codex"
+    plannerFallback: "claude"
+    defaultChatRoute: "litellm"
+    defaultCodeRoute: "codex"
+    defaultPipelineRoute: "scheduler"
+
   chat:
     default: "litellm"
     options:

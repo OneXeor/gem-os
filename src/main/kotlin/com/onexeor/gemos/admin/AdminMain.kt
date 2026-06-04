@@ -19,6 +19,9 @@ import kotlinx.serialization.json.Json
 
 @Serializable
 private data class ProviderDefaultsResponse(
+    val orchestrationMode: String,
+    val plannerDefault: String,
+    val plannerFallback: String?,
     val chatDefault: String,
     val codeAgentDefault: String,
 )
@@ -57,6 +60,9 @@ fun main() {
                         projects = current.projects.projects.size,
                         pipelines = current.pipelines.pipelines.size,
                         providers = ProviderDefaultsResponse(
+                            orchestrationMode = current.providers.providers.orchestration.mode,
+                            plannerDefault = current.providers.providers.orchestration.plannerDefault,
+                            plannerFallback = current.providers.providers.orchestration.plannerFallback,
                             chatDefault = current.providers.providers.chat.default,
                             codeAgentDefault = current.providers.providers.codeAgent.default,
                         ),

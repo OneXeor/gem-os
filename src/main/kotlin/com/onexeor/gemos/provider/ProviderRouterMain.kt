@@ -47,6 +47,9 @@ private data class CodeAgentProviderResponse(
 
 @Serializable
 private data class CodeAgentProvidersResponse(
+    val orchestrationMode: String,
+    val plannerDefault: String,
+    val plannerFallback: String?,
     val default: String,
     val providers: List<CodeAgentProviderResponse>,
 )
@@ -75,9 +78,13 @@ fun main() {
                 call.respond(ConfigLoader.load().providers)
             }
             get("/providers/code-agents") {
-                val codeAgents = ConfigLoader.load().providers.providers.codeAgent
+                val providers = ConfigLoader.load().providers.providers
+                val codeAgents = providers.codeAgent
                 call.respond(
                     CodeAgentProvidersResponse(
+                        orchestrationMode = providers.orchestration.mode,
+                        plannerDefault = providers.orchestration.plannerDefault,
+                        plannerFallback = providers.orchestration.plannerFallback,
                         default = codeAgents.default,
                         providers = codeAgents.options.map { (id, option) ->
                             CodeAgentProviderResponse(
