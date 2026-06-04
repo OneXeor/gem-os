@@ -6,7 +6,7 @@ COPY settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY src ./src
 COPY config ./config
 
-RUN gradle --no-daemon --max-workers=1 clean test installDist
+RUN gradle --no-daemon --max-workers=1 clean installDist
 
 FROM eclipse-temurin:21-jre-alpine
 

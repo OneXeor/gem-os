@@ -6,6 +6,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
 import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
@@ -57,9 +59,14 @@ fun main() {
             get("/providers/litellm/health") {
                 val current = ConfigLoader.load()
                 val baseUrl = current.settings.litellmBaseUrl.trimEnd('/')
+                val apiKey = System.getenv("LITELLM_API_KEY").orEmpty()
                 val result = runCatching {
                     runBlocking {
-                        val response = client.get("$baseUrl/health/liveliness")
+                        val response = client.get("$baseUrl/health/liveliness") {
+                            if (apiKey.isNotBlank()) {
+                                header(HttpHeaders.Authorization, "Bearer $apiKey")
+                            }
+                        }
                         LiteLlmHealthResponse(
                             status = if (response.status.isSuccess()) "ok" else "degraded",
                             baseUrl = baseUrl,
