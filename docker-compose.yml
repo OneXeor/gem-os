@@ -118,11 +118,22 @@ services:
 
   slack-bot:
     <<: *gem-app
-    command: java -cp /app/lib/* com.onexeor.gemos.scheduler.SchedulerMainKt --status
+    command: java -cp /app/lib/* com.onexeor.gemos.slack.SlackBotMainKt
     env_file:
       - .env
     environment:
       GEM_HOME: /app
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      LITELLM_BASE_URL: http://litellm:4000
+      BRAIN_BASE_URL: http://brain:8020
+      SLACK_PORT: 8030
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET}
+      SLACK_ALLOWED_USERS: ${SLACK_ALLOWED_USERS}
+    ports:
+      - "8030:8030"
     profiles:
       - slack
     depends_on:

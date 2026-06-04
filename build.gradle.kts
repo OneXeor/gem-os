@@ -68,6 +68,13 @@ tasks.register<JavaExec>("brain") {
     mainClass.set("com.onexeor.gemos.brain.BrainMainKt")
 }
 
+tasks.register<JavaExec>("slackBot") {
+    group = "application"
+    description = "Run Gem OS Slack bot service"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.onexeor.gemos.slack.SlackBotMainKt")
+}
+
 tasks.register<JavaExec>("schedulerStatus") {
     group = "application"
     description = "Print scheduler status"

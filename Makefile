@@ -1,7 +1,7 @@
 COMPOSE := $(shell command -v docker-compose >/dev/null 2>&1 && echo docker-compose || echo "docker compose")
 GRADLE ?= gradle
 
-.PHONY: setup compose-config up down logs ps build test lint admin-health brain-health router-health scheduler-status aso-stub
+.PHONY: setup compose-config up down logs ps build test lint admin-health brain-health router-health slack-health scheduler-status aso-stub
 
 setup:
 	@test -f .env || cp .env.example .env
@@ -38,6 +38,9 @@ brain-health:
 
 router-health:
 	curl -fsS http://localhost:8010/health
+
+slack-health:
+	curl -fsS http://localhost:8030/health
 
 scheduler-status:
 	$(GRADLE) schedulerStatus
