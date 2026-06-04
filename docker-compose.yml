@@ -71,6 +71,23 @@ services:
       qdrant:
         condition: service_started
 
+  brain:
+    <<: *gem-app
+    command: java -cp /app/lib/* com.onexeor.gemos.brain.BrainMainKt
+    env_file:
+      - .env
+    environment:
+      GEM_HOME: /app
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      LITELLM_BASE_URL: http://litellm:4000
+    ports:
+      - "8020:8020"
+    depends_on:
+      provider-router:
+        condition: service_started
+
   admin:
     <<: *gem-app
     command: java -cp /app/lib/* com.onexeor.gemos.admin.AdminMainKt
@@ -85,7 +102,7 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      provider-router:
+      brain:
         condition: service_started
 
   scheduler:
@@ -109,7 +126,7 @@ services:
     profiles:
       - slack
     depends_on:
-      provider-router:
+      brain:
         condition: service_started
 
   cloudflared:
@@ -130,6 +147,8 @@ services:
       - "9090:9090"
     depends_on:
       admin:
+        condition: service_started
+      brain:
         condition: service_started
       provider-router:
         condition: service_started

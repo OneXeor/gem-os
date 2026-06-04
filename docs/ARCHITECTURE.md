@@ -6,10 +6,11 @@
 Slack
   |
   v
-slack-bot ---> identity/project context ---> provider-router
-  |                    |                         |
-  |                    v                         v
-  |                memory/db          LiteLLM chat / direct code agents
+slack-bot ---> brain ---> provider-router
+  |            |              |
+  |            v              v
+  |       identity/project   LiteLLM chat / direct code agents
+  |       memory/db
   |
   v
 scheduler ---> pipelines ---> artifacts/logs/results
@@ -32,12 +33,25 @@ Responsibilities:
 - Receive Slack DMs, mentions, and commands.
 - Maintain thread sessions.
 - Build context from identity, user, project, and memory.
-- Dispatch work to provider router or scheduler.
+- Dispatch requests to brain.
 - Report progress and final results.
 
 Non-goals:
 - Running heavy pipelines inside the Slack request handler.
 - Storing secrets in Slack messages.
+
+### brain
+
+Responsibilities:
+- Build Gem/Viktor/project context.
+- Classify requests.
+- Choose pipeline, agent, tool, or provider capability.
+- Return structured decisions.
+- Create run records once persistence is added.
+
+Non-goals:
+- Executing heavy work directly.
+- Replacing provider-router, scheduler, or pipeline services.
 
 ### provider-router
 

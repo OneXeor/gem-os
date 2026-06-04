@@ -36,6 +36,7 @@ redis
 qdrant
 litellm
 provider-router
+brain
 slack-bot
 scheduler
 admin
@@ -47,6 +48,7 @@ cloudflared
 ## Ports
 
 - Admin: `8000`
+- Brain: `8020`
 - Provider router: `8010`
 - LiteLLM: `4000`
 - Qdrant: `6333`

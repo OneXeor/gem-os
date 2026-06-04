@@ -15,6 +15,7 @@ data class Settings(
     val gemHome: String,
     val gemEnv: String,
     val adminPort: Int,
+    val brainPort: Int,
     val providerRouterPort: Int,
     val databaseUrl: String,
     val redisUrl: String,
@@ -186,6 +187,7 @@ object ConfigLoader {
                 gemHome = root.toString(),
                 gemEnv = System.getenv("GEM_ENV") ?: "local",
                 adminPort = (System.getenv("ADMIN_PORT") ?: "8000").toInt(),
+                brainPort = (System.getenv("BRAIN_PORT") ?: "8020").toInt(),
                 providerRouterPort = (System.getenv("PROVIDER_ROUTER_PORT") ?: "8010").toInt(),
                 databaseUrl = System.getenv("DATABASE_URL")
                     ?: "postgresql://gem:gem@postgres:5432/gem",

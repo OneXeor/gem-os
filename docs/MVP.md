@@ -17,6 +17,7 @@ route work to AI providers, and execute one measurable automation pipeline.
    - Mention support can follow after DM is stable.
    - Thread-scoped sessions.
    - Basic commands: `status`, `projects`, `run aso`, `logs`.
+   - Sends free-form requests to brain for routing.
 
 3. Identity and project awareness
    - Gem identity.
@@ -26,6 +27,7 @@ route work to AI providers, and execute one measurable automation pipeline.
    - Active project selection.
 
 4. Provider routing
+   - Brain decision API.
    - Gem routes Slack requests through a capability router.
    - Pipelines, direct code agents, tools, and chat providers are all available
      execution paths.

@@ -12,8 +12,8 @@ capabilities to use for a task.
 Slack request
   -> identify user/project/thread
   -> build Gem/Viktor/project context
-  -> classify task
-  -> choose capability
+  -> brain classifies task
+  -> brain chooses capability
   -> create run
   -> execute pipeline/agent/tool/provider
   -> store logs/artifacts/results

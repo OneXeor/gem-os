@@ -57,6 +57,13 @@ tasks.register<JavaExec>("providerRouter") {
     mainClass.set("com.onexeor.gemos.provider.ProviderRouterMainKt")
 }
 
+tasks.register<JavaExec>("brain") {
+    group = "application"
+    description = "Run Gem OS brain service"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.onexeor.gemos.brain.BrainMainKt")
+}
+
 tasks.register<JavaExec>("schedulerStatus") {
     group = "application"
     description = "Print scheduler status"

@@ -33,7 +33,14 @@ private data class AdminStatusResponse(
     val gem: String,
     val projects: Int,
     val pipelines: Int,
+    val brain: BrainStatusResponse,
     val providers: ProviderDefaultsResponse,
+)
+
+@Serializable
+private data class BrainStatusResponse(
+    val mode: String,
+    val port: Int,
 )
 
 fun main() {
@@ -59,6 +66,10 @@ fun main() {
                         gem = current.identity.gem.name,
                         projects = current.projects.projects.size,
                         pipelines = current.pipelines.pipelines.size,
+                        brain = BrainStatusResponse(
+                            mode = current.providers.providers.orchestration.mode,
+                            port = current.settings.brainPort,
+                        ),
                         providers = ProviderDefaultsResponse(
                             orchestrationMode = current.providers.providers.orchestration.mode,
                             plannerDefault = current.providers.providers.orchestration.plannerDefault,
