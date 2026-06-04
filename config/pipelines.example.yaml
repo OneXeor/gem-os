@@ -1,0 +1,29 @@
+pipelines:
+  - id: aso-monitor
+    name: "ASO Monitor"
+    stage: "mvp"
+    enabled: false
+    project_ids:
+      - "aso-fabric"
+    schedule:
+      cron: "0 9 * * 1-5"
+      timezone: "Europe/Warsaw"
+    mode: "report-only"
+    provider:
+      chat: "litellm"
+    outputs:
+      slack: true
+      admin: true
+
+  - id: implementation
+    name: "Implementation Pipeline"
+    stage: "post-mvp"
+    enabled: false
+    mode: "manual-only"
+    provider:
+      code_agent: "codex"
+    safety:
+      require_branch: true
+      require_tests: true
+      require_human_approval_for_pr: true
+

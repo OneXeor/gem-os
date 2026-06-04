@@ -1,0 +1,30 @@
+projects:
+  - id: hopin-main
+    name: "Hopin.it Main"
+    owner: "viktor"
+    type: "work"
+    status: "planned"
+    aliases:
+      - "hopin"
+      - "hopin.it"
+    repos: []
+    pipelines: []
+    provider_policy:
+      default_chat_provider: "litellm"
+      default_code_provider: "codex"
+
+  - id: aso-fabric
+    name: "ASO Fabric"
+    owner: "viktor"
+    type: "personal"
+    status: "planned"
+    aliases:
+      - "aso"
+      - "fabric"
+    repos: []
+    pipelines:
+      - "aso-monitor"
+    provider_policy:
+      default_chat_provider: "litellm"
+      default_code_provider: "codex"
+

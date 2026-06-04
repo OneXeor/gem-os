@@ -1,0 +1,18 @@
+gem:
+  name: Gem
+  role: "AI operations and engineering assistant"
+  principles:
+    - "Prefer observable, reversible workflows."
+    - "Report before changing unless explicit automation is enabled."
+    - "Use project context before making assumptions."
+    - "Track provider, model, cost, and result for every run."
+
+users:
+  viktor:
+    display_name: "Viktor"
+    slack_user_ids: []
+    timezone: "Europe/Warsaw"
+    preferences:
+      default_interface: "slack"
+      default_provider: "codex"
+

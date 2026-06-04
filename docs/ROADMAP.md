@@ -1,0 +1,176 @@
+# Roadmap
+
+## Stage 0: Product And Architecture
+
+Purpose: define the system before implementation.
+
+Deliverables:
+- Product README.
+- MVP scope.
+- Architecture document.
+- Runtime design.
+- Initial config schemas.
+- ADRs for key decisions.
+
+Exit criteria:
+- The service list, data flow, provider boundaries, and MVP are clear enough to
+  implement without re-litigating scope every day.
+
+## Stage 1: Portable Runtime
+
+Purpose: make the system reproducible on any target host.
+
+Deliverables:
+- `.devcontainer/`.
+- `docker-compose.yml`.
+- Services: `slack-bot`, `admin`, `scheduler`, `litellm`, `cloudflared`,
+  database, Redis, Qdrant.
+- Shared env and secrets conventions.
+- Health checks.
+
+Exit criteria:
+- A clean machine can start the stack.
+- Admin health page can show all services.
+
+## Stage 2: Identity And Project Registry
+
+Purpose: make Gem understand who it is helping and which projects exist.
+
+Deliverables:
+- `identity.yaml`.
+- `projects.yaml`.
+- Project context loader.
+- Slack prompt/context builder.
+- Project aliases and ownership.
+
+Exit criteria:
+- Slack bot can answer who Gem is, who Viktor is, and which projects exist.
+- Bot can resolve a user message to a project when enough context exists.
+
+## Stage 3: Provider Router
+
+Purpose: support Claude, Codex, and LiteLLM without hardwiring pipelines to one
+provider.
+
+Deliverables:
+- Provider registry.
+- Chat provider interface.
+- Code-agent provider interface.
+- Cost/token tracking.
+- Provider health checks.
+- Per-project defaults and overrides.
+
+Exit criteria:
+- Slack can run the same simple prompt through Claude, Codex, or LiteLLM by
+  explicit choice.
+- Run records include provider, model, tokens, cost, and status.
+
+## Stage 4: Slack Bot
+
+Purpose: make Slack the operator interface.
+
+Deliverables:
+- DM handler.
+- Thread session store.
+- Command router.
+- Allowlist.
+- Provider selection.
+- Run status and logs commands.
+
+Exit criteria:
+- Viktor can start and inspect a pipeline run from Slack.
+
+## Stage 5: Admin Web App
+
+Purpose: make the system observable and debuggable.
+
+Deliverables:
+- Dashboard.
+- Service status.
+- Scheduler jobs.
+- Runs list/detail.
+- Logs viewer.
+- Provider/cost stats.
+- Project registry view.
+- Config validation page.
+
+Exit criteria:
+- Any pipeline failure can be diagnosed from admin without SSHing first.
+
+## Stage 6: ASO Fabric Pipeline
+
+Purpose: ship the first useful automation.
+
+Deliverables:
+- ASO Fabric project connector.
+- Metric collection.
+- Competitor/keyword collection.
+- Hypothesis generation.
+- Recommendation/report generation.
+- Outcome monitoring.
+- Cron job.
+- Slack and admin reporting.
+
+Exit criteria:
+- ASO runs on schedule and produces measurable recommendations.
+- Later runs can say what improved, degraded, or stayed inconclusive.
+
+## Stage 7: Learning And Memory
+
+Purpose: turn outcomes into reusable system knowledge.
+
+Deliverables:
+- Memory model.
+- Decision store.
+- Pipeline lesson store.
+- Retrieval into prompts.
+- Admin review queue for uncertain memories.
+
+Exit criteria:
+- ASO and operator decisions can be reused in later runs.
+
+## Stage 8: Implementation Pipeline
+
+Purpose: safely automate code changes.
+
+Deliverables:
+- Task loader.
+- Planning agent.
+- Worktree/branch manager.
+- Code-agent execution.
+- Build/test runner.
+- PR creation.
+- Feedback loop for failures.
+
+Exit criteria:
+- Gem can implement a small task in a test repo and produce a verified PR.
+
+## Stage 9: Host Runners For Mobile Automation
+
+Purpose: support platform checks that cannot live cleanly inside Linux
+containers.
+
+Deliverables:
+- Host runner protocol.
+- macOS launch agent or daemon.
+- iOS simulator runner.
+- Android emulator runner.
+- Screenshots/videos/log artifacts.
+
+Exit criteria:
+- Implementation pipeline can request simulator/emulator checks and get
+  structured results.
+
+## Stage 10: Hardening
+
+Purpose: make the system reliable enough to leave running.
+
+Deliverables:
+- Backup/restore.
+- Secrets rotation.
+- Alerting.
+- Rate-limit handling.
+- Provider fallback.
+- Run cancellation.
+- Rollback playbooks.
+

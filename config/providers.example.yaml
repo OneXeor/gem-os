@@ -1,0 +1,22 @@
+providers:
+  chat:
+    default: "litellm"
+    options:
+      litellm:
+        base_url_env: "LITELLM_BASE_URL"
+        api_key_env: "LITELLM_API_KEY"
+        default_model: "gem-chat"
+      claude:
+        api_key_env: "ANTHROPIC_API_KEY"
+        default_model: "claude-sonnet"
+
+  code_agent:
+    default: "codex"
+    options:
+      codex:
+        mode: "cli-or-api"
+        default_model: "latest"
+      claude:
+        mode: "claude-code-cli"
+        default_model: "latest"
+
