@@ -15,6 +15,8 @@ data class BrainRequest(
 
 @Serializable
 data class BrainDecisionResponse(
+    val runId: String? = null,
+    val status: String? = null,
     val decision: String,
     val route: String,
     val projectId: String? = null,

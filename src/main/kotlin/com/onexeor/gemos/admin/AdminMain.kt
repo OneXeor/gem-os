@@ -2,8 +2,10 @@ package com.onexeor.gemos.admin
 
 import com.onexeor.gemos.core.ConfigLoader
 import com.onexeor.gemos.core.HealthResponse
+import com.onexeor.gemos.core.run.RunRepository
 import io.ktor.server.metrics.micrometer.MicrometerMetrics
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -12,6 +14,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.ktor.server.routing.route
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.serialization.Serializable
@@ -46,6 +49,8 @@ private data class BrainStatusResponse(
 fun main() {
     val cfg = ConfigLoader.load()
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    val runs = RunRepository(cfg.settings)
+    runs.migrate()
     embeddedServer(Netty, host = "0.0.0.0", port = cfg.settings.adminPort) {
         install(ContentNegotiation) {
             json(Json { prettyPrint = false })
@@ -85,6 +90,24 @@ fun main() {
             }
             get("/pipelines") {
                 call.respond(ConfigLoader.load().pipelines)
+            }
+            get("/runs") {
+                call.respond(runs.listRuns())
+            }
+            route("/runs/{id}") {
+                get {
+                    val id = call.parameters["id"].orEmpty()
+                    val run = runs.getRun(id)
+                    if (run == null) {
+                        call.respondText("Run not found", status = io.ktor.http.HttpStatusCode.NotFound)
+                    } else {
+                        call.respond(run)
+                    }
+                }
+                get("/events") {
+                    val id = call.parameters["id"].orEmpty()
+                    call.respond(runs.listEvents(id))
+                }
             }
             get("/metrics") {
                 call.respondText(prometheus.scrape())

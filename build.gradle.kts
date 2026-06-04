@@ -10,6 +10,7 @@ version = "0.1.0"
 val ktorVersion = "3.3.1"
 val logbackVersion = "1.5.21"
 val hopliteVersion = "2.9.0"
+val flywayVersion = "10.22.0"
 
 kotlin {
     jvmToolchain(21)
@@ -32,6 +33,9 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus:1.16.1")
     implementation("com.sksamuel.hoplite:hoplite-core:$hopliteVersion")
     implementation("com.sksamuel.hoplite:hoplite-yaml:$hopliteVersion")
+    implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
+    implementation("org.postgresql:postgresql:42.7.4")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
 
     testImplementation(kotlin("test"))
