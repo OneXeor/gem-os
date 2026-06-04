@@ -4,11 +4,40 @@ Gem OS is the orchestration layer. It receives intent, builds context, chooses
 the right capability, creates a run graph, executes work through pipelines,
 agents, and tools, then reports the result.
 
+## 1. System Map
+
 ![Gem OS Blueprint](assets/gem-os-blueprint.svg)
+
+This is the mental model: interfaces enter on the left, Gem makes decisions in
+the middle, capabilities execute on the right, and storage/observability close
+the loop.
+
+## 2. Runtime Deployment
+
+![Gem OS Runtime Deployment](assets/runtime-deployment.svg)
+
+This is the deployment model for the Mac mini:
+
+- Docker Compose contains the long-running services and stateful infrastructure.
+- `cloudflared` exposes the Slack/admin entry point when enabled.
+- Codex CLI and authenticated repository work stay on the host runner.
+- Secrets stay outside source control in `.env`, SSH config, Slack credentials,
+  and tunnel credentials.
+
+## 3. Run Lifecycle
+
+![Gem OS Run Lifecycle](assets/run-lifecycle.svg)
+
+This is the operational model:
+
+- Brain creates a parent run that records the decision.
+- Scheduler or provider adapters create child runs for actual execution.
+- Every child run persists events, logs, status, and artifacts.
+- Admin, Slack, Prometheus, and Grafana report what happened.
 
 ## How To Read It
 
-Read the blueprint left to right:
+Read the diagrams left to right:
 
 1. A request enters through Slack, cron, admin, or manual API.
 2. Brain builds context from identity, projects, memory, and indexed knowledge.

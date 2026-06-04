@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">Gem OS Runtime Deployment</title>
+  <desc id="desc">Runtime deployment diagram showing external services, Mac mini host boundary, Docker Compose services, host runners, repositories, and secrets.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#425066"/>
+    </marker>
+    <style>
+      .bg { fill: #f7f8fb; }
+      .title { font: 700 34px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+      .subtitle { font: 400 16px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #5c677a; }
+      .label { font: 700 14px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: .06em; fill: #4d5a6e; }
+      .node-title { font: 700 16px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+      .node-text { font: 400 12.5px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #566174; }
+      .small { font: 400 12px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #627086; }
+      .host { fill: #ffffff; stroke: #cfd6e3; stroke-width: 2; rx: 20; }
+      .compose { fill: #eef4ff; stroke: #8cb0e8; stroke-width: 1.6; rx: 18; }
+      .external { fill: #eef8f3; stroke: #7abf9b; stroke-width: 1.4; rx: 12; }
+      .service { fill: #ffffff; stroke: #91a8c8; stroke-width: 1.3; rx: 10; }
+      .runner { fill: #f4efff; stroke: #a28bdc; stroke-width: 1.4; rx: 12; }
+      .data { fill: #eef1f5; stroke: #a9b3c2; stroke-width: 1.4; rx: 12; }
+      .secret { fill: #fff1ea; stroke: #df9a70; stroke-width: 1.4; rx: 12; }
+      .line { fill: none; stroke: #425066; stroke-width: 2; marker-end: url(#arrow); }
+      .dash { fill: none; stroke: #7b8799; stroke-width: 1.7; stroke-dasharray: 6 6; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1280" height="760"/>
+  <text class="title" x="52" y="58">Runtime Deployment</text>
+  <text class="subtitle" x="52" y="86">What runs inside Docker, what stays on the Mac mini host, and what remains external.</text>
+
+  <rect class="external" x="54" y="136" width="170" height="70"/>
+  <text class="node-title" x="103" y="165">Slack</text>
+  <text class="node-text" x="83" y="187">events and replies</text>
+
+  <rect class="external" x="54" y="246" width="170" height="70"/>
+  <text class="node-title" x="90" y="275">Cloudflare</text>
+  <text class="node-text" x="87" y="297">public tunnel</text>
+
+  <rect class="external" x="54" y="356" width="170" height="70"/>
+  <text class="node-title" x="97" y="385">GitHub</text>
+  <text class="node-text" x="82" y="407">repos and docs</text>
+
+  <rect class="external" x="54" y="466" width="170" height="70"/>
+  <text class="node-title" x="88" y="495">LLM APIs</text>
+  <text class="node-text" x="84" y="517">bounded calls only</text>
+
+  <rect class="host" x="278" y="126" width="946" height="554"/>
+  <text class="label" x="306" y="158">MAC MINI HOST</text>
+
+  <rect class="compose" x="306" y="188" width="622" height="430"/>
+  <text class="label" x="334" y="220">DOCKER COMPOSE / DEV CONTAINER BOUNDARY</text>
+
+  <rect class="service" x="334" y="250" width="130" height="66"/>
+  <text class="node-title" x="369" y="278">slack-bot</text>
+  <text class="node-text" x="360" y="299">event adapter</text>
+
+  <rect class="service" x="496" y="250" width="130" height="66"/>
+  <text class="node-title" x="539" y="278">brain</text>
+  <text class="node-text" x="521" y="299">decision API</text>
+
+  <rect class="service" x="658" y="250" width="130" height="66"/>
+  <text class="node-title" x="690" y="278">admin</text>
+  <text class="node-text" x="682" y="299">web/API</text>
+
+  <rect class="service" x="334" y="350" width="130" height="66"/>
+  <text class="node-title" x="365" y="378">scheduler</text>
+  <text class="node-text" x="367" y="399">workers</text>
+
+  <rect class="service" x="496" y="350" width="130" height="66"/>
+  <text class="node-title" x="524" y="378">provider</text>
+  <text class="node-title" x="529" y="396">router</text>
+
+  <rect class="service" x="658" y="350" width="130" height="66"/>
+  <text class="node-title" x="689" y="378">LiteLLM</text>
+  <text class="node-text" x="683" y="399">model proxy</text>
+
+  <rect class="data" x="334" y="468" width="114" height="66"/>
+  <text class="node-title" x="361" y="496">Postgres</text>
+  <text class="node-text" x="363" y="517">runs</text>
+
+  <rect class="data" x="470" y="468" width="114" height="66"/>
+  <text class="node-title" x="500" y="496">Redis</text>
+  <text class="node-text" x="497" y="517">queue</text>
+
+  <rect class="data" x="606" y="468" width="114" height="66"/>
+  <text class="node-title" x="634" y="496">Qdrant</text>
+  <text class="node-text" x="632" y="517">vectors</text>
+
+  <rect class="service" x="742" y="468" width="114" height="66"/>
+  <text class="node-title" x="764" y="496">Grafana</text>
+  <text class="node-text" x="761" y="517">dashboards</text>
+
+  <rect class="service" x="742" y="548" width="114" height="44"/>
+  <text class="node-title" x="763" y="576">Prometheus</text>
+
+  <rect class="runner" x="974" y="188" width="200" height="92"/>
+  <text class="node-title" x="1020" y="221">Host Runner</text>
+  <text class="node-text" x="1004" y="245">Codex CLI, repo auth,</text>
+  <text class="node-text" x="1015" y="264">local worktrees</text>
+
+  <rect class="runner" x="974" y="314" width="200" height="92"/>
+  <text class="node-title" x="1014" y="347">ASO Factory</text>
+  <text class="node-text" x="1013" y="371">external repo CLI</text>
+  <text class="node-text" x="1013" y="390">called by runs</text>
+
+  <rect class="data" x="974" y="440" width="200" height="80"/>
+  <text class="node-title" x="1014" y="472">Worktrees</text>
+  <text class="node-text" x="1010" y="495">gem-os, ASO-Factory,</text>
+  <text class="node-text" x="1025" y="512">Hopin.it repos</text>
+
+  <rect class="secret" x="974" y="552" width="200" height="66"/>
+  <text class="node-title" x="1033" y="580">Secrets</text>
+  <text class="node-text" x="1009" y="601">.env, SSH, Slack, tunnel</text>
+
+  <path class="line" d="M224 171 C250 171 268 283 334 283"/>
+  <path class="line" d="M224 281 C252 281 274 283 334 283"/>
+  <path class="dash" d="M224 391 C300 391 860 480 974 480"/>
+  <path class="dash" d="M224 501 C312 501 584 383 658 383"/>
+
+  <path class="line" d="M464 283 L496 283"/>
+  <path class="line" d="M626 283 L658 283"/>
+  <path class="line" d="M561 316 L561 350"/>
+  <path class="line" d="M496 383 L464 383"/>
+  <path class="line" d="M626 383 L658 383"/>
+  <path class="line" d="M399 416 L391 468"/>
+  <path class="line" d="M399 416 C455 444 501 442 527 468"/>
+  <path class="line" d="M561 416 C597 445 638 443 663 468"/>
+  <path class="line" d="M723 416 C752 437 782 443 799 468"/>
+  <path class="line" d="M799 548 L799 534"/>
+
+  <path class="line" d="M464 383 C690 360 850 236 974 234"/>
+  <path class="line" d="M464 383 C720 396 840 364 974 360"/>
+  <path class="line" d="M464 383 C710 464 860 480 974 480"/>
+  <path class="dash" d="M1074 552 C1060 460 1080 350 1074 280"/>
+
+  <text class="small" x="52" y="716">Important boundary: Docker contains services and stateful infrastructure. Codex CLI and repository-authenticated work stay on the Mac mini host runner.</text>
+</svg>

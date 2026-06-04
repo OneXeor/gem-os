@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">Gem OS Run Lifecycle</title>
+  <desc id="desc">Run lifecycle diagram showing request intake, brain decision, parent and child runs, execution, persistence, monitoring, and reporting.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#425066"/>
+    </marker>
+    <style>
+      .bg { fill: #f7f8fb; }
+      .title { font: 700 34px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+      .subtitle { font: 400 16px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #5c677a; }
+      .step { fill: #ffffff; stroke: #cad2df; stroke-width: 1.5; rx: 14; }
+      .brain { fill: #eaf2ff; stroke: #7da8e8; stroke-width: 1.5; rx: 14; }
+      .run { fill: #fff6e4; stroke: #d9a441; stroke-width: 1.5; rx: 14; }
+      .exec { fill: #f3efff; stroke: #a28bdc; stroke-width: 1.5; rx: 14; }
+      .store { fill: #eef1f5; stroke: #a9b3c2; stroke-width: 1.5; rx: 14; }
+      .report { fill: #eef8f3; stroke: #7abf9b; stroke-width: 1.5; rx: 14; }
+      .danger { fill: #fff0ee; stroke: #dc8c7d; stroke-width: 1.5; rx: 14; }
+      .node-title { font: 700 16px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+      .node-text { font: 400 12.5px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #566174; }
+      .small { font: 400 12px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #627086; }
+      .line { fill: none; stroke: #425066; stroke-width: 2; marker-end: url(#arrow); }
+      .dash { fill: none; stroke: #7b8799; stroke-width: 1.7; stroke-dasharray: 6 6; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1280" height="760"/>
+  <text class="title" x="52" y="58">Run Lifecycle</text>
+  <text class="subtitle" x="52" y="86">Everything important becomes a parent run, one or more child runs, events, logs, artifacts, and a final report.</text>
+
+  <rect class="step" x="52" y="152" width="170" height="86"/>
+  <text class="node-title" x="93" y="184">1. Intake</text>
+  <text class="node-text" x="78" y="207">Slack, cron, admin,</text>
+  <text class="node-text" x="92" y="225">or manual API</text>
+
+  <rect class="brain" x="272" y="152" width="178" height="86"/>
+  <text class="node-title" x="309" y="184">2. Context</text>
+  <text class="node-text" x="300" y="207">identity, project,</text>
+  <text class="node-text" x="303" y="225">memory, vectors</text>
+
+  <rect class="run" x="500" y="152" width="178" height="86"/>
+  <text class="node-title" x="535" y="184">3. Parent Run</text>
+  <text class="node-text" x="535" y="207">brain_decision</text>
+  <text class="node-text" x="533" y="225">reason and route</text>
+
+  <rect class="brain" x="728" y="152" width="178" height="86"/>
+  <text class="node-title" x="760" y="184">4. Decision</text>
+  <text class="node-text" x="764" y="207">pipeline, agent,</text>
+  <text class="node-text" x="771" y="225">planner, tool</text>
+
+  <rect class="run" x="956" y="152" width="178" height="86"/>
+  <text class="node-title" x="993" y="184">5. Child Run</text>
+  <text class="node-text" x="992" y="207">created, queued,</text>
+  <text class="node-text" x="1006" y="225">traceable</text>
+
+  <rect class="exec" x="158" y="364" width="178" height="96"/>
+  <text class="node-title" x="197" y="397">6a. Pipeline</text>
+  <text class="node-text" x="196" y="420">ASO Factory,</text>
+  <text class="node-text" x="189" y="438">indexing, cron jobs</text>
+
+  <rect class="exec" x="386" y="364" width="178" height="96"/>
+  <text class="node-title" x="428" y="397">6b. Agent</text>
+  <text class="node-text" x="425" y="420">Codex host runner,</text>
+  <text class="node-text" x="420" y="438">tests and monitoring</text>
+
+  <rect class="exec" x="614" y="364" width="178" height="96"/>
+  <text class="node-title" x="655" y="397">6c. LLM Call</text>
+  <text class="node-text" x="651" y="420">LiteLLM bounded</text>
+  <text class="node-text" x="655" y="438">chat/planning</text>
+
+  <rect class="exec" x="842" y="364" width="178" height="96"/>
+  <text class="node-title" x="888" y="397">6d. Tool</text>
+  <text class="node-text" x="875" y="420">GitHub, files,</text>
+  <text class="node-text" x="881" y="438">host commands</text>
+
+  <rect class="store" x="272" y="574" width="178" height="86"/>
+  <text class="node-title" x="310" y="606">7. Persist</text>
+  <text class="node-text" x="302" y="629">events, stdout,</text>
+  <text class="node-text" x="310" y="647">artifacts, status</text>
+
+  <rect class="danger" x="550" y="574" width="178" height="86"/>
+  <text class="node-title" x="588" y="606">8. Monitor</text>
+  <text class="node-text" x="588" y="629">tests, metrics,</text>
+  <text class="node-text" x="600" y="647">regressions</text>
+
+  <rect class="report" x="828" y="574" width="178" height="86"/>
+  <text class="node-title" x="868" y="606">9. Report</text>
+  <text class="node-text" x="868" y="629">Slack, admin,</text>
+  <text class="node-text" x="880" y="647">Grafana</text>
+
+  <path class="line" d="M222 195 L272 195"/>
+  <path class="line" d="M450 195 L500 195"/>
+  <path class="line" d="M678 195 L728 195"/>
+  <path class="line" d="M906 195 L956 195"/>
+
+  <path class="line" d="M1045 238 C1045 315 247 296 247 364"/>
+  <path class="line" d="M1045 238 C1045 320 475 300 475 364"/>
+  <path class="line" d="M1045 238 C1045 320 703 300 703 364"/>
+  <path class="line" d="M1045 238 C1045 315 931 300 931 364"/>
+
+  <path class="line" d="M247 460 C247 525 361 526 361 574"/>
+  <path class="line" d="M475 460 C475 525 361 526 361 574"/>
+  <path class="line" d="M703 460 C703 525 361 526 361 574"/>
+  <path class="line" d="M931 460 C931 525 361 526 361 574"/>
+
+  <path class="line" d="M450 617 L550 617"/>
+  <path class="line" d="M728 617 L828 617"/>
+  <path class="dash" d="M917 574 C917 520 1130 505 1134 238"/>
+
+  <text class="small" x="52" y="716">The parent run explains why Gem chose a path. Child runs prove what actually happened, including logs, status transitions, artifacts, tests, and final reports.</text>
+</svg>
