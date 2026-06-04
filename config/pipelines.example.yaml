@@ -11,6 +11,19 @@ pipelines:
     mode: "report-only"
     provider:
       chat: "litellm"
+    execution:
+      type: "external-cli"
+      repo: "git@github.com:OneXeor/ASO-Factory.git"
+      workingDirectory: "/Users/onexeor/src/ASO-Factory"
+      command:
+        - "python"
+        - "-m"
+        - "aso_factory"
+        - "status"
+        - "--bundle"
+        - "it.hopin.motivation"
+        - "--locale"
+        - "en-US"
     outputs:
       slack: true
       admin: true
@@ -26,3 +39,64 @@ pipelines:
       requireBranch: true
       requireTests: true
       requireHumanApprovalForPr: true
+
+  - id: repo-catalog
+    name: "Repository Catalog"
+    stage: "knowledge"
+    enabled: false
+    mode: "catalog-only"
+    schedule:
+      cron: "0 3 * * *"
+      timezone: "Europe/Warsaw"
+    execution:
+      type: "internal"
+      command:
+        - "repo-catalog"
+    outputs:
+      slack: false
+      admin: true
+
+  - id: docs-index
+    name: "Documentation Index"
+    stage: "knowledge"
+    enabled: false
+    mode: "index-docs"
+    schedule:
+      cron: "30 3 * * *"
+      timezone: "Europe/Warsaw"
+    execution:
+      type: "internal"
+      command:
+        - "docs-index"
+    outputs:
+      slack: false
+      admin: true
+
+  - id: code-index
+    name: "Code Index"
+    stage: "knowledge"
+    enabled: false
+    mode: "manual-first"
+    execution:
+      type: "internal"
+      command:
+        - "code-index"
+    outputs:
+      slack: false
+      admin: true
+
+  - id: obsidian-index
+    name: "Obsidian Index"
+    stage: "knowledge"
+    enabled: false
+    mode: "index-notes"
+    schedule:
+      cron: "0 4 * * *"
+      timezone: "Europe/Warsaw"
+    execution:
+      type: "internal"
+      command:
+        - "obsidian-index"
+    outputs:
+      slack: false
+      admin: true

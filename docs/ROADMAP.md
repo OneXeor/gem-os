@@ -119,7 +119,26 @@ Exit criteria:
 - ASO runs on schedule and produces measurable recommendations.
 - Later runs can say what improved, degraded, or stayed inconclusive.
 
-## Stage 7: Learning And Memory
+## Stage 7: Knowledge Indexing
+
+Purpose: make Gem understand available repositories, docs, selected code, and
+operator notes before serious agents execute work.
+
+Deliverables:
+- Repository catalog pipeline for Viktor and Hopin.it GitHub accounts/orgs.
+- Documentation indexing pipeline.
+- Selected code indexing pipeline.
+- Optional Obsidian vault indexing pipeline.
+- BGE-M3 embedding provider.
+- Qdrant collections for repos, docs, code, and notes.
+- Retrieval API for Brain.
+
+Exit criteria:
+- Gem can answer what repos/projects exist from indexed sources.
+- Brain can retrieve relevant docs/notes before choosing a capability.
+- Indexing can run by cron and manual trigger.
+
+## Stage 8: Learning And Memory
 
 Purpose: turn outcomes into reusable system knowledge.
 
@@ -133,7 +152,7 @@ Deliverables:
 Exit criteria:
 - ASO and operator decisions can be reused in later runs.
 
-## Stage 8: Implementation Pipeline
+## Stage 9: Implementation Pipeline
 
 Purpose: safely automate code changes.
 
@@ -149,7 +168,7 @@ Deliverables:
 Exit criteria:
 - Gem can implement a small task in a test repo and produce a verified PR.
 
-## Stage 9: Host Runners For Mobile Automation
+## Stage 10: Host Runners For Mobile Automation
 
 Purpose: support platform checks that cannot live cleanly inside Linux
 containers.
@@ -165,7 +184,7 @@ Exit criteria:
 - Implementation pipeline can request simulator/emulator checks and get
   structured results.
 
-## Stage 10: Hardening
+## Stage 11: Hardening
 
 Purpose: make the system reliable enough to leave running.
 

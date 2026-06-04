@@ -135,6 +135,14 @@ data class PipelineProvider(
 )
 
 @Serializable
+data class PipelineExecution(
+    val type: String = "internal",
+    val repo: String? = null,
+    val workingDirectory: String? = null,
+    val command: List<String> = emptyList(),
+)
+
+@Serializable
 data class PipelineOutputs(
     val slack: Boolean = true,
     val admin: Boolean = true,
@@ -157,6 +165,7 @@ data class PipelineConfig(
     val schedule: PipelineSchedule? = null,
     val mode: String = "manual-only",
     val provider: PipelineProvider = PipelineProvider(),
+    val execution: PipelineExecution = PipelineExecution(),
     val outputs: PipelineOutputs = PipelineOutputs(),
     val safety: PipelineSafety = PipelineSafety(),
 )

@@ -127,6 +127,20 @@ Responsibilities:
 - Keep business pipeline statistics backed by persisted run data, not only
   process metrics.
 
+### knowledge indexing
+
+Responsibilities:
+- Discover GitHub repositories from configured accounts/orgs.
+- Index repository documentation.
+- Index selected code paths for active projects.
+- Index Obsidian notes when configured.
+- Embed content with local BGE-M3 and store vectors in Qdrant.
+- Provide retrieval context to Brain before planning.
+
+Non-goals:
+- Replacing GitHub, repository docs, or Obsidian as source systems.
+- Blindly indexing every file in every repository.
+
 ### data stores
 
 Recommended MVP:

@@ -14,14 +14,17 @@ projects:
       defaultCodeProvider: "codex"
 
   - id: aso-fabric
-    name: "ASO Fabric"
+    name: "ASO Factory"
     owner: "viktor"
     type: "personal"
     status: "planned"
     aliases:
       - "aso"
       - "fabric"
-    repos: []
+      - "factory"
+      - "aso-factory"
+    repos:
+      - "git@github.com:OneXeor/ASO-Factory.git"
     pipelines:
       - "aso-monitor"
     providerPolicy:

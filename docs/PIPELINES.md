@@ -16,7 +16,15 @@ scheduled/manual trigger
   -> expose in admin
 ```
 
-## First Pipeline: ASO Fabric
+## First Pipeline: ASO Factory
+
+Repository:
+- `git@github.com:OneXeor/ASO-Factory.git`
+- Local checkout during development: `/Users/onexeor/src/ASO-Factory`
+
+Gem owns orchestration, run tracking, Slack/admin visibility, and scheduling.
+ASO Factory owns the ASO domain workflow, database schema, CLI commands,
+agents, prompts, and App Store specific integrations.
 
 Inputs:
 - App/project config.
@@ -35,6 +43,11 @@ Outputs:
 
 Initial mode:
 - Report-only.
+- First integration command: `python -m aso_factory status --bundle
+  it.hopin.motivation --locale en-US`.
+
+Gem should call ASO Factory as an external CLI pipeline through a host runner or
+dedicated scheduler worker. Gem should not copy ASO Factory logic into Gem OS.
 
 Later modes:
 - Draft metadata update.
@@ -60,4 +73,3 @@ Outputs:
 - Slack/admin report.
 
 This comes after ASO and observability are stable.
-
