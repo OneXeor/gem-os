@@ -5,6 +5,7 @@ x-gem-app: &gem-app
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: gem
       POSTGRES_PASSWORD: gem
@@ -19,6 +20,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -30,6 +32,7 @@ services:
 
   qdrant:
     image: qdrant/qdrant:v1.13.4
+    restart: unless-stopped
     volumes:
       - qdrant_data:/qdrant/storage
     ports:
@@ -37,6 +40,7 @@ services:
 
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
+    restart: unless-stopped
     command: ["--host", "0.0.0.0", "--port", "4000"]
     env_file:
       - .env
@@ -51,6 +55,7 @@ services:
 
   provider-router:
     <<: *gem-app
+    restart: unless-stopped
     command: java -cp /app/lib/* com.onexeor.gemos.provider.ProviderRouterMainKt
     env_file:
       - .env
@@ -73,6 +78,7 @@ services:
 
   brain:
     <<: *gem-app
+    restart: unless-stopped
     command: java -cp /app/lib/* com.onexeor.gemos.brain.BrainMainKt
     env_file:
       - .env
@@ -90,6 +96,7 @@ services:
 
   admin:
     <<: *gem-app
+    restart: unless-stopped
     command: java -cp /app/lib/* com.onexeor.gemos.admin.AdminMainKt
     env_file:
       - .env
@@ -107,6 +114,7 @@ services:
 
   scheduler:
     <<: *gem-app
+    restart: "no"
     command: java -cp /app/lib/* com.onexeor.gemos.scheduler.SchedulerMainKt --status
     env_file:
       - .env
@@ -118,6 +126,7 @@ services:
 
   slack-bot:
     <<: *gem-app
+    restart: unless-stopped
     command: java -cp /app/lib/* com.onexeor.gemos.slack.SlackBotMainKt
     env_file:
       - .env
@@ -142,6 +151,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
+    restart: unless-stopped
     command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TUNNEL_TOKEN}
     profiles:
       - tunnel
@@ -151,6 +161,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.1.0
+    restart: unless-stopped
     volumes:
       - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -166,6 +177,7 @@ services:
 
   grafana:
     image: grafana/grafana:11.4.0
+    restart: unless-stopped
     env_file:
       - .env
     environment:

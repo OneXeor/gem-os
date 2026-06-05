@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.onexeor.gem-os</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/onexeor/src/gem-os/ops/macos/start-gem-os.sh</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <false/>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/onexeor/src/gem-os</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/onexeor/src/gem-os/logs/launchd.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/onexeor/src/gem-os/logs/launchd.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>GEM_OS_HOME</key>
+    <string>/Users/onexeor/src/gem-os</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+</dict>
+</plist>
