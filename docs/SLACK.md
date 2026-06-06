@@ -29,6 +29,7 @@ Required for real Slack usage:
 ```text
 SLACK_BOT_TOKEN=xoxb-...
 SLACK_SIGNING_SECRET=...
+SLACK_REQUIRE_SIGNATURE=true
 SLACK_ALLOWED_USERS=U...
 ```
 
@@ -41,6 +42,23 @@ BRAIN_BASE_URL=http://brain:8020
 
 `SLACK_ALLOWED_USERS` is comma-separated. If it is empty, the bot accepts all
 Slack users. For real workspace usage, keep it restricted.
+
+`SLACK_REQUIRE_SIGNATURE` defaults to `true`. Keep it enabled for any public
+tunnel. Disable it only for local fake-event tests.
+
+## Public Tunnel Security
+
+For public access through Cloudflare, use these minimum controls:
+
+- Keep only `/slack/events` as the Slack Request URL.
+- Keep `SLACK_SIGNING_SECRET` configured.
+- Keep `SLACK_REQUIRE_SIGNATURE=true`.
+- Set `SLACK_ALLOWED_USERS` to Viktor's Slack user ID.
+- Do not expose admin, provider-router, LiteLLM, Grafana, or Prometheus through
+  the public tunnel.
+- Use Cloudflare Access for human/admin URLs later; do not put Cloudflare Access
+  in front of `/slack/events`, because Slack cannot complete an interactive
+  Access login.
 
 ## Slack App Setup
 

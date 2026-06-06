@@ -8,8 +8,13 @@ import kotlin.test.assertTrue
 
 class SlackBotTest {
     @Test
-    fun `allows unsigned requests when signing secret is not configured`() {
-        assertTrue(SlackSignatureVerifier.isValid(null, null, "{}", ""))
+    fun `rejects unsigned requests by default when signing secret is not configured`() {
+        assertFalse(SlackSignatureVerifier.isValid(null, null, "{}", ""))
+    }
+
+    @Test
+    fun `allows unsigned requests only when signature requirement is disabled`() {
+        assertTrue(SlackSignatureVerifier.isValid(null, null, "{}", "", requireSignature = false))
     }
 
     @Test

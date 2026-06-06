@@ -84,6 +84,7 @@ fun main() {
     val brainBaseUrl = System.getenv("BRAIN_BASE_URL") ?: "http://brain:${cfg.settings.brainPort}"
     val botToken = System.getenv("SLACK_BOT_TOKEN").orEmpty()
     val signingSecret = System.getenv("SLACK_SIGNING_SECRET").orEmpty()
+    val requireSignature = (System.getenv("SLACK_REQUIRE_SIGNATURE") ?: "true").toBooleanStrictOrNull() ?: true
     val allowedUsers = System.getenv("SLACK_ALLOWED_USERS")
         ?.split(',')
         ?.map { it.trim() }
@@ -114,7 +115,7 @@ fun main() {
             }
             post("/slack/events") {
                 val body = call.receiveText()
-                if (!SlackSignatureVerifier.isValid(call.request.header("X-Slack-Request-Timestamp"), call.request.header("X-Slack-Signature"), body, signingSecret)) {
+                if (!SlackSignatureVerifier.isValid(call.request.header("X-Slack-Request-Timestamp"), call.request.header("X-Slack-Signature"), body, signingSecret, requireSignature)) {
                     call.respondText("invalid signature", status = HttpStatusCode.Unauthorized)
                     return@post
                 }
@@ -206,8 +207,14 @@ object SlackResponseFormatter {
 }
 
 object SlackSignatureVerifier {
-    fun isValid(timestamp: String?, signature: String?, body: String, signingSecret: String): Boolean {
-        if (signingSecret.isBlank()) return true
+    fun isValid(
+        timestamp: String?,
+        signature: String?,
+        body: String,
+        signingSecret: String,
+        requireSignature: Boolean = true,
+    ): Boolean {
+        if (signingSecret.isBlank()) return !requireSignature
         if (timestamp.isNullOrBlank() || signature.isNullOrBlank()) return false
 
         val now = Instant.now().epochSecond
