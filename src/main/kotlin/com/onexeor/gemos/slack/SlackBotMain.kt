@@ -4,6 +4,8 @@ import com.onexeor.gemos.brain.BrainDecisionResponse
 import com.onexeor.gemos.brain.BrainRequest
 import com.onexeor.gemos.core.ConfigLoader
 import com.onexeor.gemos.core.HealthResponse
+import com.onexeor.gemos.core.memory.SlackMessageDirection
+import com.onexeor.gemos.core.memory.SlackThreadMemoryRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -130,6 +132,9 @@ fun main() {
         .orEmpty()
     val json = Json { ignoreUnknownKeys = true; prettyPrint = false }
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    val memory = SlackThreadMemoryRepository(cfg.settings)
+    runCatching { memory.migrate() }
+        .onFailure { logger.error("Slack thread memory migration failed: {}", it.message ?: it::class.simpleName.orEmpty()) }
     val http = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(json)
@@ -142,6 +147,7 @@ fun main() {
         botToken = botToken,
         brainBaseUrl = brainBaseUrl,
         allowedUsers = allowedUsers,
+        memory = memory,
     )
 
     if (socketMode) {
@@ -200,6 +206,7 @@ private class SlackEventHandler(
     private val botToken: String,
     private val brainBaseUrl: String,
     private val allowedUsers: Set<String>,
+    private val memory: SlackThreadMemoryRepository,
 ) {
     suspend fun handle(envelope: SlackEventEnvelope) {
         val event = envelope.event
@@ -217,11 +224,16 @@ private class SlackEventHandler(
         }
 
         logger.info("Accepted Slack event type={} user={} channel={} thread={}", event.type, user, channel, event.threadTs ?: event.eventTs)
+        val threadTs = event.threadTs ?: event.eventTs
 
         if (allowedUsers.isNotEmpty() && user !in allowedUsers) {
             logger.warn("Rejected Slack user {} because they are not in SLACK_ALLOWED_USERS", user)
-            sendSlackMessage(logger, http, botToken, channel, "Gem is not enabled for this Slack user yet.", event.threadTs ?: event.eventTs)
+            sendSlackMessage(logger, http, botToken, channel, "Gem is not enabled for this Slack user yet.", threadTs)
             return
+        }
+
+        if (threadTs != null) {
+            rememberMessage(channel, threadTs, event.eventTs, user, SlackMessageDirection.USER, text)
         }
 
         val decision = http.post("$brainBaseUrl/decide") {
@@ -230,13 +242,41 @@ private class SlackEventHandler(
                 BrainRequest(
                     user = user,
                     text = text,
-                    threadId = event.threadTs ?: event.eventTs,
+                    threadId = threadTs,
                 ),
             )
         }.body<BrainDecisionResponse>()
 
+        val reply = SlackResponseFormatter.format(decision)
         logger.info("Brain decision created run={} decision={} route={} childRun={}", decision.runId, decision.decision, decision.route, decision.childRun?.id)
-        sendSlackMessage(logger, http, botToken, channel, SlackResponseFormatter.format(decision), event.threadTs ?: event.eventTs)
+        if (threadTs != null) {
+            rememberMessage(channel, threadTs, null, null, SlackMessageDirection.GEM, reply, decision.runId)
+        }
+        sendSlackMessage(logger, http, botToken, channel, reply, threadTs)
+    }
+
+    private fun rememberMessage(
+        channel: String,
+        threadTs: String,
+        eventTs: String?,
+        user: String?,
+        direction: SlackMessageDirection,
+        text: String,
+        brainRunId: String? = null,
+    ) {
+        runCatching {
+            memory.storeMessage(
+                channelId = channel,
+                threadTs = threadTs,
+                eventTs = eventTs,
+                userId = user,
+                direction = direction,
+                text = text,
+                brainRunId = brainRunId,
+            )
+        }.onFailure {
+            logger.warn("Failed to store Slack thread memory direction={} channel={} thread={}: {}", direction.value, channel, threadTs, it.message ?: it::class.simpleName.orEmpty())
+        }
     }
 }
 
@@ -339,6 +379,8 @@ private suspend fun sendSlackMessage(
 
 object SlackResponseFormatter {
     fun format(decision: BrainDecisionResponse): String {
+        decision.replyText?.takeIf { it.isNotBlank() }?.let { return it }
+
         val lines = mutableListOf<String>()
         lines += "Gem created run `${decision.runId ?: "unknown"}`."
         lines += "Decision: `${decision.decision}` via `${decision.route}`."

@@ -48,7 +48,7 @@ fun main() {
                     userId = request.user,
                     inputJson = json.encodeToString(request),
                 )
-                val decision = BrainDecider.decide(current, request)
+                val decision = BrainDecider.withReply(current, request, BrainDecider.decide(current, request))
                 runs.storeDecision(
                     runId = run.id,
                     projectId = decision.projectId,

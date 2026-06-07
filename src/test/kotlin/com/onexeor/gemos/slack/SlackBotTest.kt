@@ -47,4 +47,19 @@ class SlackBotTest {
         assertTrue(text.contains("`run_child`"))
         assertTrue(text.contains("`aso-monitor`"))
     }
+
+    @Test
+    fun `uses brain reply text when present`() {
+        val text = SlackResponseFormatter.format(
+            BrainDecisionResponse(
+                runId = "run_parent",
+                replyText = "Friendly answer",
+                decision = "show_help",
+                route = "context",
+                reason = "Help requested.",
+            ),
+        )
+
+        assertTrue(text == "Friendly answer")
+    }
 }

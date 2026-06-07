@@ -43,6 +43,27 @@ class BrainDeciderTest {
     }
 
     @Test
+    fun answersHelpCommandDirectly() {
+        val decision = BrainDecider.decide(config, BrainRequest(user = "viktor", text = "help"))
+
+        assertEquals("show_help", decision.decision)
+        assertEquals("context", decision.route)
+        assertTrue(decision.replyText.orEmpty().contains("`projects`"))
+    }
+
+    @Test
+    fun addsFriendlyReplyForPlannerRoute() {
+        val decision = BrainDecider.withReply(
+            config,
+            BrainRequest(user = "viktor", text = "think about the next gem step"),
+            BrainDecider.decide(config, BrainRequest(user = "viktor", text = "think about the next gem step")),
+        )
+
+        assertEquals("plan_with_llm", decision.decision)
+        assertTrue(decision.replyText.orEmpty().contains("created the planning run"))
+    }
+
+    @Test
     fun plannerHasNoClaudeFallbackByDefault() {
         assertNull(config.providers.providers.orchestration.plannerFallback)
     }

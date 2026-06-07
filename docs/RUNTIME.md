@@ -19,6 +19,8 @@ Deployment should use Docker Compose:
 - `.env` for secrets and host-specific config.
 - Cloudflared sidecar for public ingress.
 - Restart policies on long-running services.
+- Gem application tables use the `gem_os` database. LiteLLM keeps its own
+  database so Prisma tables do not interfere with Gem Flyway migrations.
 
 ## What Belongs Outside Containers
 

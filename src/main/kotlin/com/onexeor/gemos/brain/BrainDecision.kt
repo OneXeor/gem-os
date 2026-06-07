@@ -19,6 +19,7 @@ data class BrainDecisionResponse(
     val runId: String? = null,
     val childRun: ChildRunSummary? = null,
     val status: String? = null,
+    val replyText: String? = null,
     val decision: String,
     val route: String,
     val projectId: String? = null,
@@ -41,6 +42,8 @@ object BrainDecider {
         }
 
         val normalized = text.lowercase()
+        commandDecision(config, normalized)?.let { return it }
+
         val project = resolveProject(config.projects.projects, request.projectHint, normalized)
         val pipeline = resolvePipeline(config.pipelines.pipelines, project, normalized)
 
@@ -82,6 +85,114 @@ object BrainDecider {
             reason = "No deterministic pipeline matched; route to planner.",
         )
     }
+
+    fun withReply(config: GemConfig, request: BrainRequest, decision: BrainDecisionResponse): BrainDecisionResponse =
+        if (decision.replyText != null) {
+            decision
+        } else {
+            decision.copy(replyText = buildReply(config, request, decision))
+        }
+
+    private fun commandDecision(config: GemConfig, normalizedText: String): BrainDecisionResponse? {
+        val command = normalizedText.trim().removePrefix("/")
+        return when {
+            command in setOf("help", "what can you do", "commands") -> BrainDecisionResponse(
+                decision = "show_help",
+                route = "context",
+                reason = "User asked for Gem help.",
+                replyText = helpText(),
+            )
+            command in setOf("projects", "list projects", "what projects") -> BrainDecisionResponse(
+                decision = "list_projects",
+                route = "context",
+                reason = "User asked for configured projects.",
+                replyText = projectsText(config.projects.projects),
+            )
+            command in setOf("status", "system status") -> BrainDecisionResponse(
+                decision = "show_status",
+                route = "context",
+                reason = "User asked for Gem system status.",
+                replyText = statusText(config),
+            )
+            command in setOf("runs", "recent runs") -> BrainDecisionResponse(
+                decision = "show_runs",
+                route = "context",
+                reason = "User asked for recent runs.",
+                replyText = "Run history is stored in Postgres and visible through the admin/runtime layer. The Slack `runs` view is the next small UI endpoint to wire.",
+            )
+            else -> null
+        }
+    }
+
+    private fun buildReply(config: GemConfig, request: BrainRequest, decision: BrainDecisionResponse): String =
+        when (decision.decision) {
+            "ask_clarification" -> "I need a bit more detail. What should I work on?"
+            "run_pipeline" -> {
+                val pipeline = decision.pipelineId ?: "the matched pipeline"
+                val project = decision.projectId ?: "the matched project"
+                "I found `$pipeline` for `$project` and created a run. I will report progress here when execution is wired."
+            }
+            "answer_from_context" -> contextAnswer(config, request, decision)
+            "use_code_agent" -> {
+                val provider = decision.provider ?: config.providers.providers.orchestration.defaultCodeRoute
+                val project = decision.projectId?.let { " for `$it`" }.orEmpty()
+                "This looks like a code task$project. I would route it to `$provider`; the host runner/execution step is next."
+            }
+            "plan_with_llm" -> {
+                val provider = decision.provider ?: config.providers.providers.orchestration.plannerDefault
+                "I can plan this with `$provider`. For now I created the planning run; next we will connect execution and memory-backed chat."
+            }
+            else -> "I created a run for this request."
+        }
+
+    private fun contextAnswer(config: GemConfig, request: BrainRequest, decision: BrainDecisionResponse): String {
+        val normalized = request.text.trim().lowercase()
+        if (normalized.contains("who are you")) {
+            return "${config.identity.gem.name} is ${config.identity.gem.role}."
+        }
+        if (normalized.contains("who am i")) {
+            val user = config.identity.users.values.firstOrNull { request.user in it.slackUserIds }
+                ?: config.identity.users["viktor"]
+            return "You are ${user?.displayName ?: request.user}. I will use your project preferences and Slack context as memory is connected."
+        }
+        if (normalized.contains("projects") || normalized.contains("what projects")) {
+            return projectsText(config.projects.projects)
+        }
+        if (normalized.contains("status")) {
+            return statusText(config)
+        }
+        return decision.projectId?.let { "I found project `$it` in Gem configuration." }
+            ?: "I can answer from Gem configuration, but I need a more specific question."
+    }
+
+    private fun helpText(): String =
+        listOf(
+            "I can help from Slack with:",
+            "`help` - show commands",
+            "`status` - show current Gem runtime assumptions",
+            "`projects` - list configured projects",
+            "`runs` - show run history status",
+            "You can also ask for ASO, project, or code-agent work and I will route it.",
+        ).joinToString("\n")
+
+    private fun projectsText(projects: List<ProjectConfig>): String =
+        if (projects.isEmpty()) {
+            "No projects are configured yet."
+        } else {
+            projects.joinToString(prefix = "Configured projects:\n", separator = "\n") { project ->
+                val aliases = project.aliases.takeIf { it.isNotEmpty() }?.joinToString(", ", prefix = " aliases: ") ?: ""
+                "- `${project.id}` - ${project.name} (${project.status})$aliases"
+            }
+        }
+
+    private fun statusText(config: GemConfig): String =
+        listOf(
+            "Gem runtime:",
+            "- env: `${config.settings.gemEnv}`",
+            "- planner: `${config.providers.providers.orchestration.plannerDefault}`",
+            "- code agent: `${config.providers.providers.orchestration.defaultCodeRoute}`",
+            "- embeddings: `${config.settings.embeddingsModel}` (${config.settings.embeddingsVectorSize})",
+        ).joinToString("\n")
 
     private fun resolveProject(
         projects: List<ProjectConfig>,

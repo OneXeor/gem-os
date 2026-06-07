@@ -202,7 +202,7 @@ object ConfigLoader {
                 brainPort = (System.getenv("BRAIN_PORT") ?: "8020").toInt(),
                 providerRouterPort = (System.getenv("PROVIDER_ROUTER_PORT") ?: "8010").toInt(),
                 databaseUrl = System.getenv("DATABASE_URL")
-                    ?: "postgresql://gem:gem@postgres:5432/gem",
+                    ?: "postgresql://gem:gem@postgres:5432/gem_os",
                 redisUrl = System.getenv("REDIS_URL") ?: "redis://redis:6379/0",
                 qdrantUrl = System.getenv("QDRANT_URL") ?: "http://qdrant:6333",
                 embeddingsBaseUrl = System.getenv("EMBEDDINGS_BASE_URL") ?: "http://bge-m3:7997",

@@ -9,11 +9,11 @@ services:
     environment:
       POSTGRES_USER: gem
       POSTGRES_PASSWORD: gem
-      POSTGRES_DB: gem
+      POSTGRES_DB: gem_os
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gem -d gem"]
+      test: ["CMD-SHELL", "pg_isready -U gem -d gem_os"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -65,7 +65,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
+      DATABASE_URL: ${LITELLM_DATABASE_URL:-postgresql://gem:gem@postgres:5432/gem}
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
     ports:
       - "4000:4000"
@@ -83,7 +83,7 @@ services:
       - .env
     environment:
       GEM_HOME: /app
-      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem_os
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       EMBEDDINGS_BASE_URL: http://bge-m3:7997
@@ -109,7 +109,7 @@ services:
       - .env
     environment:
       GEM_HOME: /app
-      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem_os
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       EMBEDDINGS_BASE_URL: http://bge-m3:7997
@@ -130,7 +130,7 @@ services:
       - .env
     environment:
       GEM_HOME: /app
-      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem_os
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       EMBEDDINGS_BASE_URL: http://bge-m3:7997
@@ -163,7 +163,7 @@ services:
       - .env
     environment:
       GEM_HOME: /app
-      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
+      DATABASE_URL: postgresql://gem:gem@postgres:5432/gem_os
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       EMBEDDINGS_BASE_URL: http://bge-m3:7997
