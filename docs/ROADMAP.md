@@ -77,14 +77,36 @@ Deliverables:
 - DM handler.
 - Thread session store.
 - Command router.
+- Fast chat replies for `help`, `status`, `projects`, and identity questions.
+- Socket Mode support for workspaces that do not deliver Events API over HTTP.
 - Allowlist.
 - Provider selection.
 - Run status and logs commands.
 
 Exit criteria:
+- Gem feels like a Slack chat assistant, not only a run router.
+- Gem remembers context within a Slack thread.
 - Viktor can start and inspect a pipeline run from Slack.
 
-## Stage 5: Admin Web App
+## Stage 5: Memory Foundation
+
+Purpose: give Gem enough memory to behave like a useful chat assistant before
+deep automation is added.
+
+Deliverables:
+- Postgres thread memory.
+- Run memory through existing runs and run events.
+- Markdown durable notes for projects, preferences, and decisions.
+- Clear Redis role for deduplication, locks, rate limits, and temporary cache.
+- Memory design documented in `docs/MEMORY.md`.
+
+Exit criteria:
+- Gem can resolve simple follow-ups like "run that" inside the same Slack
+  thread.
+- Important facts have an obvious place to live as markdown notes.
+- Redis is not used as a source of truth.
+
+## Stage 6: Admin Web App
 
 Purpose: make the system observable and debuggable.
 
@@ -101,9 +123,23 @@ Deliverables:
 Exit criteria:
 - Any pipeline failure can be diagnosed from admin without SSHing first.
 
-## Stage 6: ASO Fabric Pipeline
+## Stage 7: Scheduler Execution
 
-Purpose: ship the first useful automation.
+Purpose: make child runs actually execute instead of only being recorded.
+
+Deliverables:
+- Worker loop for `created -> running -> completed/failed`.
+- Execution adapters for `context_answer`, `planner`, `pipeline`, and
+  `code_agent`.
+- Run event/result persistence.
+- Slack final-result updates.
+
+Exit criteria:
+- Slack can receive both the immediate chat reply and the final run result.
+
+## Stage 8: ASO Fabric Pipeline
+
+Purpose: ship the first useful real automation.
 
 Deliverables:
 - ASO Fabric project connector.
@@ -119,7 +155,7 @@ Exit criteria:
 - ASO runs on schedule and produces measurable recommendations.
 - Later runs can say what improved, degraded, or stayed inconclusive.
 
-## Stage 7: Knowledge Indexing
+## Stage 9: Knowledge Indexing
 
 Purpose: make Gem understand available repositories, docs, selected code, and
 operator notes before serious agents execute work.
@@ -138,7 +174,7 @@ Exit criteria:
 - Brain can retrieve relevant docs/notes before choosing a capability.
 - Indexing can run by cron and manual trigger.
 
-## Stage 8: Learning And Memory
+## Stage 10: Learning And Memory
 
 Purpose: turn outcomes into reusable system knowledge.
 
@@ -152,7 +188,7 @@ Deliverables:
 Exit criteria:
 - ASO and operator decisions can be reused in later runs.
 
-## Stage 9: Implementation Pipeline
+## Stage 11: Implementation Pipeline
 
 Purpose: safely automate code changes.
 
@@ -168,7 +204,7 @@ Deliverables:
 Exit criteria:
 - Gem can implement a small task in a test repo and produce a verified PR.
 
-## Stage 10: Host Runners For Mobile Automation
+## Stage 12: Host Runners For Mobile Automation
 
 Purpose: support platform checks that cannot live cleanly inside Linux
 containers.
@@ -184,7 +220,7 @@ Exit criteria:
 - Implementation pipeline can request simulator/emulator checks and get
   structured results.
 
-## Stage 11: Hardening
+## Stage 13: Hardening
 
 Purpose: make the system reliable enough to leave running.
 

@@ -93,12 +93,12 @@
   <text class="node-text" x="801" y="328">Hopin.it + personal</text>
 
   <rect class="context" x="774" y="369" width="178" height="70"/>
-  <text class="node-title" x="807" y="398">Memory</text>
-  <text class="node-text" x="803" y="420">decisions, notes</text>
+  <text class="node-title" x="798" y="398">Thread</text>
+  <text class="node-title" x="798" y="418">Memory</text>
 
   <rect class="context" x="774" y="461" width="178" height="70"/>
-  <text class="node-title" x="801" y="490">Knowledge</text>
-  <text class="node-text" x="799" y="512">repos, docs, code</text>
+  <text class="node-title" x="797" y="490">Vector</text>
+  <text class="node-title" x="797" y="510">Knowledge</text>
 
   <rect class="boundary" x="1026" y="125" width="212" height="460"/>
   <text class="section-label" x="1052" y="156">CAPABILITIES</text>
@@ -127,7 +127,7 @@
 
   <rect class="storage" x="68" y="694" width="132" height="72"/>
   <text class="node-title" x="97" y="724">Postgres</text>
-  <text class="node-text" x="93" y="746">runs, events</text>
+  <text class="node-text" x="89" y="746">threads + runs</text>
 
   <rect class="storage" x="225" y="694" width="132" height="72"/>
   <text class="node-title" x="262" y="724">Redis</text>

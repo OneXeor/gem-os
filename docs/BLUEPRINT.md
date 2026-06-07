@@ -74,9 +74,10 @@ Every meaningful action is represented as a run.
 
 ## Near-Term Build Order
 
-1. Slack bot connected to Brain.
-2. Scheduler executes child runs.
-3. ASO Factory runs through scheduler.
-4. Knowledge indexing pipelines.
-5. Brain retrieval from Qdrant.
-6. Codex host-runner adapter.
+1. Slack chat router and friendly replies.
+2. Postgres thread memory.
+3. Markdown durable notes.
+4. Scheduler executes child runs.
+5. ASO Factory runs through scheduler.
+6. Knowledge indexing and Qdrant retrieval.
+7. Codex host-runner adapter.
