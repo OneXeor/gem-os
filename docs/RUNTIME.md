@@ -34,6 +34,7 @@ These should be exposed through a `host-runner` protocol later.
 postgres
 redis
 qdrant
+bge-m3
 litellm
 provider-router
 brain
@@ -51,6 +52,7 @@ cloudflared
 - Brain: `8020`
 - Provider router: `8010`
 - LiteLLM: `4000`
+- BGE-M3 embeddings: `7997` internal Compose service only
 - Qdrant: `6333`
 - Prometheus: `9090`
 - Grafana: `3000`

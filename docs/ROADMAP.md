@@ -165,7 +165,8 @@ Deliverables:
 - Documentation indexing pipeline.
 - Selected code indexing pipeline.
 - Optional Obsidian vault indexing pipeline.
-- BGE-M3 embedding provider.
+- BGE-M3 embedding provider. Deployed locally through Docker Compose with
+  Infinity and exposed to apps through LiteLLM as `bge-m3`.
 - Qdrant collections for repos, docs, code, and notes.
 - Retrieval API for Brain.
 

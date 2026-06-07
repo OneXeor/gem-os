@@ -83,6 +83,15 @@ Schedule:
 Default local embedding model:
 - BGE-M3.
 
+Runtime:
+- Docker Compose service: `bge-m3`.
+- Serving engine: Infinity embeddings server.
+- Internal endpoint: `http://bge-m3:7997`.
+- Public/app endpoint: LiteLLM `/v1/embeddings` using model `bge-m3`.
+- The service is not exposed through Cloudflare or host ports.
+- On Apple Silicon, the current Infinity CPU image runs as `linux/amd64`
+  under emulation because the image does not publish an ARM64 manifest.
+
 The embedding provider should sit behind an interface:
 - `local-bge-m3`
 - future remote embedding providers if needed

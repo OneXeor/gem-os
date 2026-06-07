@@ -38,6 +38,26 @@ services:
     ports:
       - "6333:6333"
 
+  bge-m3:
+    image: michaelf34/infinity:latest-cpu
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      DO_NOT_TRACK: "1"
+    command:
+      - v2
+      - --model-id
+      - BAAI/bge-m3
+      - --engine
+      - torch
+      - --no-compile
+      - --no-bettertransformer
+      - --no-model-warmup
+      - --port
+      - "7997"
+    volumes:
+      - bge_m3_cache:/app/.cache
+
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     restart: unless-stopped
@@ -52,6 +72,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      bge-m3:
+        condition: service_started
 
   provider-router:
     <<: *gem-app
@@ -196,5 +218,6 @@ volumes:
   postgres_data:
   redis_data:
   qdrant_data:
+  bge_m3_cache:
   prometheus_data:
   grafana_data:
