@@ -8,9 +8,12 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -30,13 +33,21 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
 
 @Serializable
 private data class SlackUrlVerification(
@@ -79,12 +90,36 @@ private data class SlackApiResponse(
     val error: String? = null,
 )
 
+@Serializable
+private data class SlackSocketConnectionResponse(
+    val ok: Boolean,
+    val url: String? = null,
+    val error: String? = null,
+)
+
+@Serializable
+private data class SlackSocketMessage(
+    val type: String,
+    @SerialName("envelope_id")
+    val envelopeId: String? = null,
+    val payload: SlackEventEnvelope? = null,
+    val reason: String? = null,
+)
+
+@Serializable
+private data class SlackSocketAck(
+    @SerialName("envelope_id")
+    val envelopeId: String,
+)
+
 fun main() {
     val logger = LoggerFactory.getLogger("com.onexeor.gemos.slack.SlackBot")
     val cfg = ConfigLoader.load()
     val slackPort = (System.getenv("SLACK_PORT") ?: "8030").toInt()
     val brainBaseUrl = System.getenv("BRAIN_BASE_URL") ?: "http://brain:${cfg.settings.brainPort}"
     val botToken = System.getenv("SLACK_BOT_TOKEN").orEmpty()
+    val appToken = System.getenv("SLACK_APP_TOKEN").orEmpty()
+    val socketMode = (System.getenv("SLACK_SOCKET_MODE") ?: "false").toBooleanStrictOrNull() ?: false
     val signingSecret = System.getenv("SLACK_SIGNING_SECRET").orEmpty()
     val requireSignature = (System.getenv("SLACK_REQUIRE_SIGNATURE") ?: "true").toBooleanStrictOrNull() ?: true
     val allowedUsers = System.getenv("SLACK_ALLOWED_USERS")
@@ -99,6 +134,28 @@ fun main() {
         install(ContentNegotiation) {
             json(json)
         }
+        install(WebSockets)
+    }
+    val handler = SlackEventHandler(
+        logger = logger,
+        http = http,
+        botToken = botToken,
+        brainBaseUrl = brainBaseUrl,
+        allowedUsers = allowedUsers,
+    )
+
+    if (socketMode) {
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            SlackSocketModeRunner(
+                logger = logger,
+                http = http,
+                json = json,
+                appToken = appToken,
+                handler = handler,
+            ).runForever()
+        }
+    } else {
+        logger.info("Slack Socket Mode disabled; HTTP Events API endpoint is active")
     }
 
     embeddedServer(Netty, host = "0.0.0.0", port = slackPort) {
@@ -130,48 +187,122 @@ fun main() {
                     return@post
                 }
 
-                val event = envelope.event
-                if (envelope.type != "event_callback" || event == null || event.shouldIgnore()) {
-                    logger.info("Ignored Slack event type={} eventType={} subtype={} botIdPresent={}", envelope.type, event?.type, event?.subtype, event?.botId != null)
-                    call.respondText("ok")
-                    return@post
-                }
-
-                val user = event.user
-                val channel = event.channel
-                val text = event.text?.stripBotMention()?.trim().orEmpty()
-                if (user.isNullOrBlank() || channel.isNullOrBlank() || text.isBlank()) {
-                    logger.info("Ignored Slack event with missing user/channel/text")
-                    call.respondText("ok")
-                    return@post
-                }
-
-                logger.info("Accepted Slack event type={} user={} channel={} thread={}", event.type, user, channel, event.threadTs ?: event.eventTs)
-
-                if (allowedUsers.isNotEmpty() && user !in allowedUsers) {
-                    logger.warn("Rejected Slack user {} because they are not in SLACK_ALLOWED_USERS", user)
-                    sendSlackMessage(logger, http, botToken, channel, "Gem is not enabled for this Slack user yet.", event.threadTs ?: event.eventTs)
-                    call.respondText("ok")
-                    return@post
-                }
-
-                val decision = http.post("$brainBaseUrl/decide") {
-                    contentType(ContentType.Application.Json)
-                    setBody(
-                        BrainRequest(
-                            user = user,
-                            text = text,
-                            threadId = event.threadTs ?: event.eventTs,
-                        ),
-                    )
-                }.body<BrainDecisionResponse>()
-
-                logger.info("Brain decision created run={} decision={} route={} childRun={}", decision.runId, decision.decision, decision.route, decision.childRun?.id)
-                sendSlackMessage(logger, http, botToken, channel, SlackResponseFormatter.format(decision), event.threadTs ?: event.eventTs)
+                handler.handle(envelope)
                 call.respondText("ok")
             }
         }
     }.start(wait = true)
+}
+
+private class SlackEventHandler(
+    private val logger: org.slf4j.Logger,
+    private val http: HttpClient,
+    private val botToken: String,
+    private val brainBaseUrl: String,
+    private val allowedUsers: Set<String>,
+) {
+    suspend fun handle(envelope: SlackEventEnvelope) {
+        val event = envelope.event
+        if (envelope.type != "event_callback" || event == null || event.shouldIgnore()) {
+            logger.info("Ignored Slack event type={} eventType={} subtype={} botIdPresent={}", envelope.type, event?.type, event?.subtype, event?.botId != null)
+            return
+        }
+
+        val user = event.user
+        val channel = event.channel
+        val text = event.text?.stripBotMention()?.trim().orEmpty()
+        if (user.isNullOrBlank() || channel.isNullOrBlank() || text.isBlank()) {
+            logger.info("Ignored Slack event with missing user/channel/text")
+            return
+        }
+
+        logger.info("Accepted Slack event type={} user={} channel={} thread={}", event.type, user, channel, event.threadTs ?: event.eventTs)
+
+        if (allowedUsers.isNotEmpty() && user !in allowedUsers) {
+            logger.warn("Rejected Slack user {} because they are not in SLACK_ALLOWED_USERS", user)
+            sendSlackMessage(logger, http, botToken, channel, "Gem is not enabled for this Slack user yet.", event.threadTs ?: event.eventTs)
+            return
+        }
+
+        val decision = http.post("$brainBaseUrl/decide") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                BrainRequest(
+                    user = user,
+                    text = text,
+                    threadId = event.threadTs ?: event.eventTs,
+                ),
+            )
+        }.body<BrainDecisionResponse>()
+
+        logger.info("Brain decision created run={} decision={} route={} childRun={}", decision.runId, decision.decision, decision.route, decision.childRun?.id)
+        sendSlackMessage(logger, http, botToken, channel, SlackResponseFormatter.format(decision), event.threadTs ?: event.eventTs)
+    }
+}
+
+private class SlackSocketModeRunner(
+    private val logger: org.slf4j.Logger,
+    private val http: HttpClient,
+    private val json: Json,
+    private val appToken: String,
+    private val handler: SlackEventHandler,
+) {
+    suspend fun runForever() {
+        if (appToken.isBlank()) {
+            logger.error("Slack Socket Mode enabled but SLACK_APP_TOKEN is blank")
+            return
+        }
+
+        while (true) {
+            runCatching {
+                val url = openConnection()
+                logger.info("Slack Socket Mode connecting")
+                http.webSocket(urlString = url) {
+                    logger.info("Slack Socket Mode connected")
+                    for (frame in incoming) {
+                        if (frame !is Frame.Text) continue
+                        handleSocketMessage(frame.readText())
+                    }
+                }
+            }.onFailure { error ->
+                logger.error("Slack Socket Mode connection failed: {}", error.message ?: error::class.simpleName.orEmpty())
+            }
+            delay(5_000)
+        }
+    }
+
+    private suspend fun openConnection(): String {
+        val response = http.post("https://slack.com/api/apps.connections.open") {
+            bearerAuth(appToken)
+        }
+        val body = response.bodyAsText()
+        val parsed = json.decodeFromString<SlackSocketConnectionResponse>(body)
+        check(parsed.ok && !parsed.url.isNullOrBlank()) {
+            "apps.connections.open failed: ${parsed.error ?: body}"
+        }
+        return parsed.url
+    }
+
+    private suspend fun io.ktor.client.plugins.websocket.DefaultClientWebSocketSession.handleSocketMessage(text: String) {
+        val message = json.decodeFromString<SlackSocketMessage>(text)
+        when (message.type) {
+            "hello" -> logger.info("Slack Socket Mode hello received")
+            "disconnect" -> logger.warn("Slack Socket Mode disconnect requested: {}", message.reason ?: "unknown")
+            "events_api" -> {
+                val envelopeId = message.envelopeId
+                if (envelopeId != null) {
+                    send(Frame.Text(json.encodeToString(SlackSocketAck(envelopeId))))
+                }
+                val payload = message.payload
+                if (payload == null) {
+                    logger.warn("Slack Socket Mode events_api payload missing")
+                } else {
+                    handler.handle(payload)
+                }
+            }
+            else -> logger.info("Ignored Slack Socket Mode message type={}", message.type)
+        }
+    }
 }
 
 private fun SlackEvent.shouldIgnore(): Boolean =

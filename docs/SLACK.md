@@ -28,6 +28,8 @@ Required for real Slack usage:
 
 ```text
 SLACK_BOT_TOKEN=xoxb-...
+SLACK_APP_TOKEN=xapp-...
+SLACK_SOCKET_MODE=true
 SLACK_SIGNING_SECRET=...
 SLACK_REQUIRE_SIGNATURE=true
 SLACK_ALLOWED_USERS=U...
@@ -39,6 +41,10 @@ Optional:
 SLACK_PORT=8030
 BRAIN_BASE_URL=http://brain:8020
 ```
+
+If Slack Socket Mode is enabled in the Slack app settings, set
+`SLACK_SOCKET_MODE=true`. Slack will then deliver events over WebSocket using
+`SLACK_APP_TOKEN` instead of calling `/slack/events`.
 
 `SLACK_ALLOWED_USERS` is comma-separated. If it is empty, the bot accepts all
 Slack users. For real workspace usage, keep it restricted.
@@ -62,7 +68,27 @@ For public access through Cloudflare, use these minimum controls:
 
 ## Slack App Setup
 
-Use Slack Events API with the public tunnel URL:
+### Socket Mode
+
+If Socket Mode is enabled, create an app-level token with:
+
+```text
+connections:write
+```
+
+Copy the `xapp-...` token into:
+
+```text
+SLACK_APP_TOKEN=...
+SLACK_SOCKET_MODE=true
+```
+
+Slack will ignore the public Request URL for event delivery while Socket Mode
+is enabled.
+
+### HTTP Events API
+
+If Socket Mode is disabled, use Slack Events API with the public tunnel URL:
 
 ```text
 https://<your-tunnel-domain>/slack/events
