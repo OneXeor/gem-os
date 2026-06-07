@@ -57,6 +57,8 @@ The LLM is only one part of the system:
 - LiteLLM is for bounded model calls, not expensive code-agent execution.
 - ASO Factory is an external pipeline Gem can run and monitor.
 - Knowledge indexing gives Gem project memory before it plans or executes.
+- Thread, run, knowledge, and durable note memory are separate layers; see
+  [MEMORY.md](MEMORY.md).
 - Postgres stores operational truth: runs, events, status, and results.
 - Qdrant stores searchable knowledge: repos, docs, code, and notes.
 
