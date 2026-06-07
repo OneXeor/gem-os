@@ -33,6 +33,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -79,6 +80,7 @@ private data class SlackApiResponse(
 )
 
 fun main() {
+    val logger = LoggerFactory.getLogger("com.onexeor.gemos.slack.SlackBot")
     val cfg = ConfigLoader.load()
     val slackPort = (System.getenv("SLACK_PORT") ?: "8030").toInt()
     val brainBaseUrl = System.getenv("BRAIN_BASE_URL") ?: "http://brain:${cfg.settings.brainPort}"
@@ -116,18 +118,21 @@ fun main() {
             post("/slack/events") {
                 val body = call.receiveText()
                 if (!SlackSignatureVerifier.isValid(call.request.header("X-Slack-Request-Timestamp"), call.request.header("X-Slack-Signature"), body, signingSecret, requireSignature)) {
+                    logger.warn("Rejected Slack event: invalid signature")
                     call.respondText("invalid signature", status = HttpStatusCode.Unauthorized)
                     return@post
                 }
 
                 val envelope = json.decodeFromString<SlackEventEnvelope>(body)
                 if (envelope.type == "url_verification") {
+                    logger.info("Accepted Slack URL verification")
                     call.respond(SlackUrlVerification(envelope.challenge.orEmpty()))
                     return@post
                 }
 
                 val event = envelope.event
                 if (envelope.type != "event_callback" || event == null || event.shouldIgnore()) {
+                    logger.info("Ignored Slack event type={} eventType={} subtype={} botIdPresent={}", envelope.type, event?.type, event?.subtype, event?.botId != null)
                     call.respondText("ok")
                     return@post
                 }
@@ -136,12 +141,16 @@ fun main() {
                 val channel = event.channel
                 val text = event.text?.stripBotMention()?.trim().orEmpty()
                 if (user.isNullOrBlank() || channel.isNullOrBlank() || text.isBlank()) {
+                    logger.info("Ignored Slack event with missing user/channel/text")
                     call.respondText("ok")
                     return@post
                 }
 
+                logger.info("Accepted Slack event type={} user={} channel={} thread={}", event.type, user, channel, event.threadTs ?: event.eventTs)
+
                 if (allowedUsers.isNotEmpty() && user !in allowedUsers) {
-                    sendSlackMessage(http, botToken, channel, "Gem is not enabled for this Slack user yet.", event.threadTs ?: event.eventTs)
+                    logger.warn("Rejected Slack user {} because they are not in SLACK_ALLOWED_USERS", user)
+                    sendSlackMessage(logger, http, botToken, channel, "Gem is not enabled for this Slack user yet.", event.threadTs ?: event.eventTs)
                     call.respondText("ok")
                     return@post
                 }
@@ -157,7 +166,8 @@ fun main() {
                     )
                 }.body<BrainDecisionResponse>()
 
-                sendSlackMessage(http, botToken, channel, SlackResponseFormatter.format(decision), event.threadTs ?: event.eventTs)
+                logger.info("Brain decision created run={} decision={} route={} childRun={}", decision.runId, decision.decision, decision.route, decision.childRun?.id)
+                sendSlackMessage(logger, http, botToken, channel, SlackResponseFormatter.format(decision), event.threadTs ?: event.eventTs)
                 call.respondText("ok")
             }
         }
@@ -171,13 +181,17 @@ private fun String.stripBotMention(): String =
     replace(Regex("<@[A-Z0-9]+>"), " ")
 
 private suspend fun sendSlackMessage(
+    logger: org.slf4j.Logger,
     http: HttpClient,
     botToken: String,
     channel: String,
     text: String,
     threadTs: String?,
 ) {
-    if (botToken.isBlank()) return
+    if (botToken.isBlank()) {
+        logger.warn("Skipped Slack reply because SLACK_BOT_TOKEN is blank")
+        return
+    }
 
     val response = http.post("https://slack.com/api/chat.postMessage") {
         bearerAuth(botToken)
@@ -186,7 +200,9 @@ private suspend fun sendSlackMessage(
     }.body<SlackApiResponse>()
 
     if (!response.ok) {
-        error("Slack chat.postMessage failed: ${response.error ?: "unknown error"}")
+        logger.error("Slack chat.postMessage failed for channel={}: {}", channel, response.error ?: "unknown error")
+    } else {
+        logger.info("Posted Slack reply to channel={}", channel)
     }
 }
 
