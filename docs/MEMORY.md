@@ -36,6 +36,38 @@ Storage:
 Postgres
 ```
 
+## Cross-Thread Continuity
+
+Gem should be able to continue a topic from another Slack thread, but only
+through explicit retrieval.
+
+How it works:
+
+```text
+new Slack thread
+  -> load Viktor profile + Gem identity
+  -> search recent thread summaries
+  -> search related runs
+  -> retrieve durable notes / vector knowledge
+  -> answer or ask for confirmation
+```
+
+Rules:
+
+- Same Slack thread memory is automatic.
+- Cross-thread memory is retrieved and ranked.
+- If the match is ambiguous, Gem asks before assuming.
+- Stable facts should be promoted to markdown notes or indexed knowledge.
+- KV cache may cache retrieval results briefly, but it is not memory.
+
+Example:
+
+```text
+Viktor: continue the ASO monitor idea from yesterday
+Gem: I found the ASO monitor discussion from the previous thread. Continue from
+the cron/indexing plan?
+```
+
 ## 2. Run Memory
 
 Operational history of what Gem did.
@@ -88,6 +120,8 @@ Storage:
 
 ```text
 Qdrant + BGE-M3 embeddings
+model: BAAI/bge-m3
+vector size: 1024
 ```
 
 ## 4. Durable Notes
@@ -131,8 +165,9 @@ temporary cache
 ## Build Order
 
 1. Postgres thread memory.
-2. Better Slack chat replies.
-3. Markdown durable notes.
-4. Qdrant indexing.
-5. Brain retrieval from Qdrant.
-6. Redis dedup/cache.
+2. Thread summaries for cross-thread continuity.
+3. Better Slack chat replies.
+4. Markdown durable notes.
+5. Qdrant indexing.
+6. Brain retrieval from Qdrant.
+7. Redis dedup/cache.

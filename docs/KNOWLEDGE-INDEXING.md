@@ -86,11 +86,18 @@ Default local embedding model:
 Runtime:
 - Docker Compose service: `bge-m3`.
 - Serving engine: Infinity embeddings server.
-- Internal endpoint: `http://bge-m3:7997`.
-- Public/app endpoint: LiteLLM `/v1/embeddings` using model `bge-m3`.
+- Internal endpoint: `http://bge-m3:7997/embeddings`.
+- Model id: `BAAI/bge-m3`.
+- Vector size: `1024`.
+- App configuration:
+  - `EMBEDDINGS_BASE_URL=http://bge-m3:7997`
+  - `EMBEDDINGS_MODEL=BAAI/bge-m3`
+  - `EMBEDDINGS_VECTOR_SIZE=1024`
 - The service is not exposed through Cloudflare or host ports.
 - On Apple Silicon, the current Infinity CPU image runs as `linux/amd64`
   under emulation because the image does not publish an ARM64 manifest.
+- LiteLLM routing for embeddings can be added later, but the first Gem indexer
+  should use the local Infinity endpoint directly.
 
 The embedding provider should sit behind an interface:
 - `local-bge-m3`
@@ -103,6 +110,9 @@ Qdrant collections:
 - `gem_docs`
 - `gem_code`
 - `gem_notes`
+
+All collections should use cosine distance with vector size `1024` while
+`BAAI/bge-m3` is the configured embedding model.
 
 Each point should include:
 - source type

@@ -86,6 +86,9 @@ services:
       DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
+      EMBEDDINGS_BASE_URL: http://bge-m3:7997
+      EMBEDDINGS_MODEL: BAAI/bge-m3
+      EMBEDDINGS_VECTOR_SIZE: 1024
       LITELLM_BASE_URL: http://litellm:4000
       LITELLM_API_KEY: ${LITELLM_API_KEY}
     ports:
@@ -109,6 +112,9 @@ services:
       DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
+      EMBEDDINGS_BASE_URL: http://bge-m3:7997
+      EMBEDDINGS_MODEL: BAAI/bge-m3
+      EMBEDDINGS_VECTOR_SIZE: 1024
       LITELLM_BASE_URL: http://litellm:4000
     ports:
       - "8020:8020"
@@ -127,6 +133,9 @@ services:
       DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
+      EMBEDDINGS_BASE_URL: http://bge-m3:7997
+      EMBEDDINGS_MODEL: BAAI/bge-m3
+      EMBEDDINGS_VECTOR_SIZE: 1024
       LITELLM_BASE_URL: http://litellm:4000
     ports:
       - "8000:8000"
@@ -157,6 +166,9 @@ services:
       DATABASE_URL: postgresql://gem:gem@postgres:5432/gem
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
+      EMBEDDINGS_BASE_URL: http://bge-m3:7997
+      EMBEDDINGS_MODEL: BAAI/bge-m3
+      EMBEDDINGS_VECTOR_SIZE: 1024
       LITELLM_BASE_URL: http://litellm:4000
       BRAIN_BASE_URL: http://brain:8020
       SLACK_PORT: 8030

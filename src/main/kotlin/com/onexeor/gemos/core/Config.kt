@@ -20,6 +20,9 @@ data class Settings(
     val databaseUrl: String,
     val redisUrl: String,
     val qdrantUrl: String,
+    val embeddingsBaseUrl: String,
+    val embeddingsModel: String,
+    val embeddingsVectorSize: Int,
     val litellmBaseUrl: String,
 )
 
@@ -202,6 +205,9 @@ object ConfigLoader {
                     ?: "postgresql://gem:gem@postgres:5432/gem",
                 redisUrl = System.getenv("REDIS_URL") ?: "redis://redis:6379/0",
                 qdrantUrl = System.getenv("QDRANT_URL") ?: "http://qdrant:6333",
+                embeddingsBaseUrl = System.getenv("EMBEDDINGS_BASE_URL") ?: "http://bge-m3:7997",
+                embeddingsModel = System.getenv("EMBEDDINGS_MODEL") ?: "BAAI/bge-m3",
+                embeddingsVectorSize = (System.getenv("EMBEDDINGS_VECTOR_SIZE") ?: "1024").toInt(),
                 litellmBaseUrl = System.getenv("LITELLM_BASE_URL") ?: "http://litellm:4000",
             ),
             identity = readYaml(root.toString(), "identity"),

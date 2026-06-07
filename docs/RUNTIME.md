@@ -52,7 +52,8 @@ cloudflared
 - Brain: `8020`
 - Provider router: `8010`
 - LiteLLM: `4000`
-- BGE-M3 embeddings: `7997` internal Compose service only
+- BGE-M3 embeddings: `7997` internal Compose service only,
+  `/embeddings` endpoint, model `BAAI/bge-m3`, vector size `1024`
 - Qdrant: `6333`
 - Prometheus: `9090`
 - Grafana: `3000`
