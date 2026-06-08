@@ -67,6 +67,16 @@ class BrainDeciderTest {
     }
 
     @Test
+    fun answersSmallTalkWithoutPlanner() {
+        val request = BrainRequest(user = "viktor", text = "how are you?")
+        val decision = BrainDecider.withReply(config, request, BrainDecider.decide(config, request))
+
+        assertEquals("answer_small_talk", decision.decision)
+        assertEquals("chat", decision.route)
+        assertTrue(decision.replyText.orEmpty().contains("running"))
+    }
+
+    @Test
     fun continuesFromThreadContext() {
         val decision = BrainDecider.decide(
             config,

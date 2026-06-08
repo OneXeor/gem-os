@@ -74,6 +74,14 @@ object BrainDecider {
             )
         }
 
+        if (looksLikeSmallTalk(normalized)) {
+            return BrainDecisionResponse(
+                decision = "answer_small_talk",
+                route = "chat",
+                reason = "Request is conversational small talk, not a planning or execution task.",
+            )
+        }
+
         if (looksLikeCodeTask(normalized)) {
             return BrainDecisionResponse(
                 decision = "use_code_agent",
@@ -146,6 +154,7 @@ object BrainDecider {
                 "I found `$pipeline` for `$project` and created a run. I will report progress here when execution is wired."
             }
             "answer_from_context" -> contextAnswer(config, request, decision)
+            "answer_small_talk" -> smallTalkAnswer(request)
             "use_code_agent" -> {
                 val provider = decision.provider ?: config.providers.providers.orchestration.defaultCodeRoute
                 val project = decision.projectId?.let { " for `$it`" }.orEmpty()
@@ -226,6 +235,16 @@ object BrainDecider {
         }
     }
 
+    private fun smallTalkAnswer(request: BrainRequest): String {
+        val normalized = request.text.trim().lowercase()
+        return when {
+            normalized.contains("how are you") -> "I'm running. Slack sessions and thread memory are active, but real execution is still being wired."
+            normalized in setOf("hi", "hello", "hey", "yo") -> "Hey. Tell me what you want to work on, or type `help`."
+            normalized.contains("thank") -> "You are welcome."
+            else -> "I'm here. Tell me what you want to work on, or type `help`."
+        }
+    }
+
     private fun resolveProject(
         projects: List<ProjectConfig>,
         hint: String?,
@@ -274,6 +293,18 @@ object BrainDecider {
         listOf("who are you", "who am i", "projects", "what projects", "status").any {
             normalizedText.contains(it)
         }
+
+    private fun looksLikeSmallTalk(normalizedText: String): Boolean =
+        normalizedText.trim().trimEnd('?', '!', '.') in setOf(
+            "hi",
+            "hello",
+            "hey",
+            "yo",
+            "how are you",
+            "how are you doing",
+            "thanks",
+            "thank you",
+        )
 
     private fun looksLikeCodeTask(normalizedText: String): Boolean =
         listOf("implement", "fix", "refactor", "code", "test", "bug", "pr", "branch").any {
