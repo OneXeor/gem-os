@@ -1,10 +1,12 @@
 package com.onexeor.gemos.slack
 
 import com.onexeor.gemos.brain.BrainDecisionResponse
+import com.onexeor.gemos.brain.BrainContextMessage
 import com.onexeor.gemos.brain.BrainRequest
 import com.onexeor.gemos.core.ConfigLoader
 import com.onexeor.gemos.core.HealthResponse
 import com.onexeor.gemos.core.memory.SlackMessageDirection
+import com.onexeor.gemos.core.memory.SlackThreadSessionRecord
 import com.onexeor.gemos.core.memory.SlackThreadMemoryRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -232,10 +234,37 @@ private class SlackEventHandler(
             return
         }
 
-        if (threadTs != null) {
-            rememberMessage(channel, threadTs, event.eventTs, user, SlackMessageDirection.USER, text)
+        if (threadTs != null && text.isResetSessionCommand()) {
+            val closed = closeSession(channel, threadTs)
+            val reply = if (closed == null) {
+                "There is no active Gem session in this Slack thread."
+            } else {
+                "Closed Gem session `${closed.id}`. The next message in this thread will start a fresh session."
+            }
+            sendSlackMessage(logger, http, botToken, channel, reply, threadTs)
+            return
         }
 
+        val session = if (threadTs == null) {
+            null
+        } else {
+            getOrCreateSession(channel, threadTs, user)
+        }
+
+        if (threadTs != null && session != null) {
+            rememberMessage(session.id, channel, threadTs, event.eventTs, user, SlackMessageDirection.USER, text)
+        }
+
+        if (threadTs != null && text.isSessionCommand()) {
+            val reply = session?.toSlackText() ?: "There is no active Gem session in this Slack thread."
+            if (session != null) {
+                rememberMessage(session.id, channel, threadTs, null, null, SlackMessageDirection.GEM, reply)
+            }
+            sendSlackMessage(logger, http, botToken, channel, reply, threadTs)
+            return
+        }
+
+        val contextMessages = session?.let { loadContextMessages(it.id) }.orEmpty()
         val decision = http.post("$brainBaseUrl/decide") {
             contentType(ContentType.Application.Json)
             setBody(
@@ -243,19 +272,64 @@ private class SlackEventHandler(
                     user = user,
                     text = text,
                     threadId = threadTs,
+                    contextMessages = contextMessages,
                 ),
             )
         }.body<BrainDecisionResponse>()
 
         val reply = SlackResponseFormatter.format(decision)
         logger.info("Brain decision created run={} decision={} route={} childRun={}", decision.runId, decision.decision, decision.route, decision.childRun?.id)
-        if (threadTs != null) {
-            rememberMessage(channel, threadTs, null, null, SlackMessageDirection.GEM, reply, decision.runId)
+        if (session != null) {
+            updateSession(session.id, decision)
+        }
+        if (threadTs != null && session != null) {
+            rememberMessage(session.id, channel, threadTs, null, null, SlackMessageDirection.GEM, reply, decision.runId)
         }
         sendSlackMessage(logger, http, botToken, channel, reply, threadTs)
     }
 
+    private fun getOrCreateSession(channel: String, threadTs: String, user: String): SlackThreadSessionRecord? =
+        runCatching {
+            memory.getOrCreateSession(channelId = channel, threadTs = threadTs, ownerUserId = user)
+        }.onFailure {
+            logger.warn("Failed to get/create Slack thread session channel={} thread={}: {}", channel, threadTs, it.message ?: it::class.simpleName.orEmpty())
+        }.getOrNull()
+
+    private fun closeSession(channel: String, threadTs: String): SlackThreadSessionRecord? =
+        runCatching {
+            memory.closeActiveSession(channelId = channel, threadTs = threadTs)
+        }.onFailure {
+            logger.warn("Failed to close Slack thread session channel={} thread={}: {}", channel, threadTs, it.message ?: it::class.simpleName.orEmpty())
+        }.getOrNull()
+
+    private fun updateSession(sessionId: String, decision: BrainDecisionResponse) {
+        runCatching {
+            memory.updateSessionAfterDecision(
+                sessionId = sessionId,
+                runId = decision.runId,
+                decision = decision.decision,
+                route = decision.route,
+                projectId = decision.projectId,
+            )
+        }.onFailure {
+            logger.warn("Failed to update Slack thread session id={}: {}", sessionId, it.message ?: it::class.simpleName.orEmpty())
+        }
+    }
+
+    private fun loadContextMessages(sessionId: String): List<BrainContextMessage> =
+        runCatching {
+            memory.listRecentMessages(sessionId = sessionId).map { message ->
+                BrainContextMessage(
+                    role = if (message.direction == SlackMessageDirection.GEM.value) "assistant" else "user",
+                    text = message.text,
+                )
+            }
+        }.onFailure {
+            logger.warn("Failed to load Slack thread context session={}: {}", sessionId, it.message ?: it::class.simpleName.orEmpty())
+        }.getOrDefault(emptyList())
+
     private fun rememberMessage(
+        sessionId: String?,
         channel: String,
         threadTs: String,
         eventTs: String?,
@@ -266,6 +340,7 @@ private class SlackEventHandler(
     ) {
         runCatching {
             memory.storeMessage(
+                sessionId = sessionId,
                 channelId = channel,
                 threadTs = threadTs,
                 eventTs = eventTs,
@@ -279,6 +354,23 @@ private class SlackEventHandler(
         }
     }
 }
+
+private fun String.isSessionCommand(): Boolean =
+    trim().lowercase() in setOf("session", "/session")
+
+private fun String.isResetSessionCommand(): Boolean =
+    trim().lowercase() in setOf("reset session", "/reset session")
+
+private fun SlackThreadSessionRecord.toSlackText(): String =
+    listOfNotNull(
+        "Gem session `${id}`",
+        "- status: `$status`",
+        "- owner: `${ownerUserId ?: "unknown"}`",
+        currentRunId?.let { "- current run: `$it`" },
+        lastDecision?.let { "- last decision: `$it`" },
+        lastRoute?.let { "- last route: `$it`" },
+        lastProjectId?.let { "- last project: `$it`" },
+    ).joinToString("\n")
 
 private class SlackSocketModeRunner(
     private val logger: org.slf4j.Logger,

@@ -64,6 +64,24 @@ class BrainDeciderTest {
     }
 
     @Test
+    fun continuesFromThreadContext() {
+        val decision = BrainDecider.decide(
+            config,
+            BrainRequest(
+                user = "viktor",
+                text = "continue",
+                contextMessages = listOf(
+                    BrainContextMessage(role = "user", text = "build the thread session store"),
+                    BrainContextMessage(role = "assistant", text = "I will wire that next."),
+                ),
+            ),
+        )
+
+        assertEquals("continue_session", decision.decision)
+        assertTrue(decision.replyText.orEmpty().contains("build the thread session store"))
+    }
+
+    @Test
     fun plannerHasNoClaudeFallbackByDefault() {
         assertNull(config.providers.providers.orchestration.plannerFallback)
     }

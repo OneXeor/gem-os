@@ -12,6 +12,13 @@ data class BrainRequest(
     val text: String,
     val projectHint: String? = null,
     val threadId: String? = null,
+    val contextMessages: List<BrainContextMessage> = emptyList(),
+)
+
+@Serializable
+data class BrainContextMessage(
+    val role: String,
+    val text: String,
 )
 
 @Serializable
@@ -42,7 +49,7 @@ object BrainDecider {
         }
 
         val normalized = text.lowercase()
-        commandDecision(config, normalized)?.let { return it }
+        commandDecision(config, request, normalized)?.let { return it }
 
         val project = resolveProject(config.projects.projects, request.projectHint, normalized)
         val pipeline = resolvePipeline(config.pipelines.pipelines, project, normalized)
@@ -93,7 +100,7 @@ object BrainDecider {
             decision.copy(replyText = buildReply(config, request, decision))
         }
 
-    private fun commandDecision(config: GemConfig, normalizedText: String): BrainDecisionResponse? {
+    private fun commandDecision(config: GemConfig, request: BrainRequest, normalizedText: String): BrainDecisionResponse? {
         val command = normalizedText.trim().removePrefix("/")
         return when {
             command in setOf("help", "what can you do", "commands") -> BrainDecisionResponse(
@@ -120,6 +127,12 @@ object BrainDecider {
                 reason = "User asked for recent runs.",
                 replyText = "Run history is stored in Postgres and visible through the admin/runtime layer. The Slack `runs` view is the next small UI endpoint to wire.",
             )
+            command == "continue" -> BrainDecisionResponse(
+                decision = "continue_session",
+                route = "context",
+                reason = "User asked to continue the active Slack session.",
+                replyText = continueText(request),
+            )
             else -> null
         }
     }
@@ -140,7 +153,12 @@ object BrainDecider {
             }
             "plan_with_llm" -> {
                 val provider = decision.provider ?: config.providers.providers.orchestration.plannerDefault
-                "I can plan this with `$provider`. For now I created the planning run; next we will connect execution and memory-backed chat."
+                val contextNote = if (request.contextMessages.isNotEmpty()) {
+                    " I loaded ${request.contextMessages.size} recent thread messages."
+                } else {
+                    ""
+                }
+                "I can plan this with `$provider`. For now I created the planning run.$contextNote"
             }
             else -> "I created a run for this request."
         }
@@ -193,6 +211,17 @@ object BrainDecider {
             "- code agent: `${config.providers.providers.orchestration.defaultCodeRoute}`",
             "- embeddings: `${config.settings.embeddingsModel}` (${config.settings.embeddingsVectorSize})",
         ).joinToString("\n")
+
+    private fun continueText(request: BrainRequest): String {
+        val lastUserMessage = request.contextMessages
+            .asReversed()
+            .firstOrNull { it.role == "user" && it.text.lowercase() != "continue" }
+        return if (lastUserMessage == null) {
+            "I do not have enough previous context in this Slack session yet."
+        } else {
+            "I found the active thread context. Last useful user message was: \"${lastUserMessage.text.take(180)}\""
+        }
+    }
 
     private fun resolveProject(
         projects: List<ProjectConfig>,
