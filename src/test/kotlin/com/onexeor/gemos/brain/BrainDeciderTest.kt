@@ -48,7 +48,10 @@ class BrainDeciderTest {
 
         assertEquals("show_help", decision.decision)
         assertEquals("context", decision.route)
-        assertTrue(decision.replyText.orEmpty().contains("`projects`"))
+        val reply = decision.replyText.orEmpty()
+        assertTrue(reply.contains("`projects`"))
+        assertTrue(reply.contains("`session`"))
+        assertTrue(reply.contains("normal messages"))
     }
 
     @Test

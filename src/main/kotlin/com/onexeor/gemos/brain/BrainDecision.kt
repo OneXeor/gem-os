@@ -185,11 +185,14 @@ object BrainDecider {
 
     private fun helpText(): String =
         listOf(
-            "I can help from Slack with:",
+            "I can help from Slack. Type these as normal messages:",
             "`help` - show commands",
             "`status` - show current Gem runtime assumptions",
             "`projects` - list configured projects",
             "`runs` - show run history status",
+            "`session` - show this Slack thread's Gem session",
+            "`reset session` - close this thread's active Gem session",
+            "`continue` - continue from recent messages in this thread",
             "You can also ask for ASO, project, or code-agent work and I will route it.",
         ).joinToString("\n")
 

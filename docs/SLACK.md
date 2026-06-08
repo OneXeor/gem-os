@@ -44,9 +44,15 @@ On every accepted Slack message, the bot should:
 
 Thread commands:
 
+These are plain Slack messages, not Slack slash commands yet.
+
 - `session` shows the current session state.
 - `reset session` closes the current session and starts fresh.
 - `continue` means continue using the active thread context.
+- `help` shows available text commands.
+- `status` shows runtime assumptions.
+- `projects` lists configured projects.
+- `runs` shows run history status.
 
 ## Environment
 
