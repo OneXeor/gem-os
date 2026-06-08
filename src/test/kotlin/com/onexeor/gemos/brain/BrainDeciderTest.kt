@@ -77,6 +77,28 @@ class BrainDeciderTest {
     }
 
     @Test
+    fun answersShortFollowUpsFromThreadContext() {
+        val context = listOf(
+            BrainContextMessage(role = "user", text = "how are you"),
+            BrainContextMessage(
+                role = "assistant",
+                text = "I'm running. Slack sessions and thread memory are active, but real execution is still being wired.",
+            ),
+        )
+
+        val meaningRequest = BrainRequest(user = "viktor", text = "What do you mean", contextMessages = context)
+        val meaningDecision = BrainDecider.withReply(config, meaningRequest, BrainDecider.decide(config, meaningRequest))
+        assertEquals("answer_follow_up", meaningDecision.decision)
+        assertEquals("chat", meaningDecision.route)
+        assertTrue(meaningDecision.replyText.orEmpty().contains("cannot yet execute"))
+
+        val whyRequest = BrainRequest(user = "viktor", text = "Why?", contextMessages = context)
+        val whyDecision = BrainDecider.withReply(config, whyRequest, BrainDecider.decide(config, whyRequest))
+        assertEquals("answer_follow_up", whyDecision.decision)
+        assertTrue(whyDecision.replyText.orEmpty().contains("Slack interface"))
+    }
+
+    @Test
     fun continuesFromThreadContext() {
         val decision = BrainDecider.decide(
             config,

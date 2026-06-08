@@ -82,6 +82,14 @@ object BrainDecider {
             )
         }
 
+        if (looksLikeFollowUpQuestion(normalized) && request.contextMessages.isNotEmpty()) {
+            return BrainDecisionResponse(
+                decision = "answer_follow_up",
+                route = "chat",
+                reason = "Request is a short follow-up question about the active Slack thread.",
+            )
+        }
+
         if (looksLikeCodeTask(normalized)) {
             return BrainDecisionResponse(
                 decision = "use_code_agent",
@@ -155,6 +163,7 @@ object BrainDecider {
             }
             "answer_from_context" -> contextAnswer(config, request, decision)
             "answer_small_talk" -> smallTalkAnswer(request)
+            "answer_follow_up" -> followUpAnswer(request)
             "use_code_agent" -> {
                 val provider = decision.provider ?: config.providers.providers.orchestration.defaultCodeRoute
                 val project = decision.projectId?.let { " for `$it`" }.orEmpty()
@@ -245,6 +254,28 @@ object BrainDecider {
         }
     }
 
+    private fun followUpAnswer(request: BrainRequest): String {
+        val normalized = request.text.trim().lowercase().trimEnd('?', '!', '.')
+        val lastAssistantMessage = request.contextMessages
+            .asReversed()
+            .firstOrNull { it.role == "assistant" }
+            ?.text
+            .orEmpty()
+
+        if (lastAssistantMessage.contains("real execution is still being wired", ignoreCase = true)) {
+            return when (normalized) {
+                "why" -> "Because we have built the Slack interface, sessions, and thread memory first. The execution layer that actually runs pipelines or code agents from Slack is next."
+                else -> "I mean Gem can already keep Slack thread sessions and remember recent messages, but it cannot yet execute pipelines or Codex tasks end-to-end from Slack."
+            }
+        }
+
+        return when (normalized) {
+            "why" -> "Because the previous step matched the current deterministic routing rules. I need the real chat fallback next to explain arbitrary context more naturally."
+            "what do you mean" -> "I was referring to the previous message in this Slack thread. The current version can use thread context, but only through deterministic replies so far."
+            else -> "I am answering based on the recent Slack thread context. The general chat fallback still needs to be connected."
+        }
+    }
+
     private fun resolveProject(
         projects: List<ProjectConfig>,
         hint: String?,
@@ -304,6 +335,16 @@ object BrainDecider {
             "how are you doing",
             "thanks",
             "thank you",
+        )
+
+    private fun looksLikeFollowUpQuestion(normalizedText: String): Boolean =
+        normalizedText.trim().trimEnd('?', '!', '.') in setOf(
+            "what do you mean",
+            "what does it mean",
+            "why",
+            "why so",
+            "explain",
+            "explain please",
         )
 
     private fun looksLikeCodeTask(normalizedText: String): Boolean =

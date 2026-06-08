@@ -54,6 +54,10 @@ These are plain Slack messages, not Slack slash commands yet.
 - `projects` lists configured projects.
 - `runs` shows run history status.
 
+Short follow-up questions like `what do you mean?` and `why?` should be
+answered from recent thread context. Today these are deterministic replies; the
+general LLM chat fallback is still a later step.
+
 ## Environment
 
 Required for real Slack usage:
