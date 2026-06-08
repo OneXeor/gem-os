@@ -78,6 +78,7 @@ Deliverables:
 - Thread session store.
 - Command router.
 - Fast chat replies for `help`, `status`, `projects`, and identity questions.
+- Session commands: `session`, `reset session`, and context-aware `continue`.
 - Socket Mode support for workspaces that do not deliver Events API over HTTP.
 - Allowlist.
 - Provider selection.
@@ -95,6 +96,8 @@ deep automation is added.
 
 Deliverables:
 - Postgres thread memory.
+- Slack thread session table and repository.
+- Brain request context from recent Slack thread messages.
 - Run memory through existing runs and run events.
 - Markdown durable notes for projects, preferences, and decisions.
 - Clear Redis role for deduplication, locks, rate limits, and temporary cache.

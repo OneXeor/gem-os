@@ -22,6 +22,32 @@ Endpoints:
 - `GET /metrics`
 - `POST /slack/events`
 
+## Thread Sessions
+
+Gem treats every Slack thread as a persistent session.
+
+```text
+channel + thread_ts
+  -> active Gem session
+  -> transcript messages
+  -> current run / route / project
+```
+
+On every accepted Slack message, the bot should:
+
+1. Find or create the session for `channel + thread_ts`.
+2. Store the user message in `slack_thread_messages`.
+3. Load recent messages from the same session.
+4. Send the request plus context to Brain.
+5. Store Gem's reply.
+6. Update the session with the latest run, decision, route, and project.
+
+Thread commands:
+
+- `session` shows the current session state.
+- `reset session` closes the current session and starts fresh.
+- `continue` means continue using the active thread context.
+
 ## Environment
 
 Required for real Slack usage:

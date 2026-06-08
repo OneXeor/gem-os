@@ -19,6 +19,7 @@ Stores:
 
 ```text
 channel + thread_ts
+session status
 recent messages
 current topic
 referenced project/run
@@ -35,6 +36,45 @@ Storage:
 ```text
 Postgres
 ```
+
+### Thread Session Store
+
+Each Slack thread should map to one Gem session.
+
+Session fields:
+
+```text
+slack channel
+slack thread_ts
+owner Slack user
+status: active / paused / closed
+current run
+last decision
+last route
+last project
+created / updated / last message timestamps
+```
+
+Message flow:
+
+```text
+Slack message
+  -> find or create thread session
+  -> store user message
+  -> load recent thread messages
+  -> call Brain with session context
+  -> store Gem reply
+  -> update session with run/decision/project
+```
+
+Rules:
+
+- Same Slack thread always reuses the same active session.
+- `reset session` closes the current session and starts clean on the next
+  message.
+- `session` shows the current session state.
+- Session state is Postgres truth. Redis may cache it briefly later, but Redis
+  is not authoritative.
 
 ## Cross-Thread Continuity
 
@@ -165,9 +205,10 @@ temporary cache
 ## Build Order
 
 1. Postgres thread memory.
-2. Thread summaries for cross-thread continuity.
-3. Better Slack chat replies.
-4. Markdown durable notes.
-5. Qdrant indexing.
-6. Brain retrieval from Qdrant.
-7. Redis dedup/cache.
+2. Slack thread session store.
+3. Brain context loading from recent thread messages.
+4. Thread summaries for cross-thread continuity.
+5. Markdown durable notes.
+6. Qdrant indexing.
+7. Brain retrieval from Qdrant.
+8. Redis dedup/cache.
