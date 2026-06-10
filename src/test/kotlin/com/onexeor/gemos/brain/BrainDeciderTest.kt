@@ -67,6 +67,21 @@ class BrainDeciderTest {
     }
 
     @Test
+    fun answersModelQuestionDirectly() {
+        val decision = BrainDecider.decide(
+            config,
+            BrainRequest(user = "viktor", text = "What is the model are you?"),
+        )
+
+        assertEquals("show_model", decision.decision)
+        assertEquals("context", decision.route)
+        val reply = decision.replyText.orEmpty()
+        assertTrue(reply.contains("Gem OS Brain"))
+        assertTrue(reply.contains("not one raw model"))
+        assertTrue(reply.contains("BGE-M3") || reply.contains("bge-m3"))
+    }
+
+    @Test
     fun addsFriendlyReplyForPlannerRoute() {
         val decision = BrainDecider.withReply(
             config,

@@ -144,6 +144,19 @@ object BrainDecider {
                 reason = "User asked for Gem system status.",
                 replyText = statusText(config),
             )
+            command in setOf(
+                "model",
+                "what model are you",
+                "what is the model are you",
+                "which model are you",
+                "are you codex",
+                "are you claude",
+            ) -> BrainDecisionResponse(
+                decision = "show_model",
+                route = "context",
+                reason = "User asked which model/runtime Gem is using.",
+                replyText = modelText(config),
+            )
             command in setOf("runs", "recent runs") -> BrainDecisionResponse(
                 decision = "show_runs",
                 route = "context",
@@ -238,6 +251,16 @@ object BrainDecider {
             "- planner: `${config.providers.providers.orchestration.plannerDefault}`",
             "- code agent: `${config.providers.providers.orchestration.defaultCodeRoute}`",
             "- embeddings: `${config.settings.embeddingsModel}` (${config.settings.embeddingsVectorSize})",
+        ).joinToString("\n")
+
+    private fun modelText(config: GemConfig): String =
+        listOf(
+            "I am Gem OS Brain, not one raw model.",
+            "- Slack interface: `slack-bot`",
+            "- deterministic router: `brain`",
+            "- default planner/code route: `${config.providers.providers.orchestration.plannerDefault}` / `${config.providers.providers.orchestration.defaultCodeRoute}`",
+            "- local embeddings: `${config.settings.embeddingsModel}` (${config.settings.embeddingsVectorSize})",
+            "- general LLM chat fallback: not wired yet",
         ).joinToString("\n")
 
     private fun continueText(request: BrainRequest): String {
