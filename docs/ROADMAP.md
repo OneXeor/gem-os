@@ -134,6 +134,7 @@ Deliverables:
 - Worker loop for `created -> running -> completed/failed`.
 - Execution adapters for `context_answer`, `planner`, `pipeline`, and
   `code_agent`.
+- Codex Slack Executor host-runner bridge; see `docs/CODEX-SLACK-EXECUTOR.md`.
 - Run event/result persistence.
 - Slack final-result updates.
 

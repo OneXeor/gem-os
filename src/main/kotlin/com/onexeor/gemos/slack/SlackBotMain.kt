@@ -8,6 +8,7 @@ import com.onexeor.gemos.core.HealthResponse
 import com.onexeor.gemos.core.memory.SlackMessageDirection
 import com.onexeor.gemos.core.memory.SlackThreadSessionRecord
 import com.onexeor.gemos.core.memory.SlackThreadMemoryRepository
+import com.onexeor.gemos.core.run.RunRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -45,7 +46,9 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.put
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import javax.crypto.Mac
@@ -116,11 +119,30 @@ private data class SlackSocketAck(
     val envelopeId: String,
 )
 
+@Serializable
+private data class CodexRunnerRequest(
+    val runId: String,
+    val user: String,
+    val text: String,
+    val contextMessages: List<BrainContextMessage> = emptyList(),
+    val projectId: String? = null,
+)
+
+@Serializable
+private data class CodexRunnerResponse(
+    val ok: Boolean,
+    val exitCode: Int,
+    val output: String = "",
+    val stderr: String = "",
+    val durationMs: Long = 0,
+)
+
 fun main() {
     val logger = LoggerFactory.getLogger("com.onexeor.gemos.slack.SlackBot")
     val cfg = ConfigLoader.load()
     val slackPort = (System.getenv("SLACK_PORT") ?: "8030").toInt()
     val brainBaseUrl = System.getenv("BRAIN_BASE_URL") ?: "http://brain:${cfg.settings.brainPort}"
+    val codexRunnerBaseUrl = System.getenv("CODEX_RUNNER_BASE_URL").orEmpty().trimEnd('/')
     val botToken = System.getenv("SLACK_BOT_TOKEN").orEmpty()
     val appToken = System.getenv("SLACK_APP_TOKEN").orEmpty()
     val socketMode = (System.getenv("SLACK_SOCKET_MODE") ?: "false").toBooleanStrictOrNull() ?: false
@@ -137,6 +159,7 @@ fun main() {
     val memory = SlackThreadMemoryRepository(cfg.settings)
     runCatching { memory.migrate() }
         .onFailure { logger.error("Slack thread memory migration failed: {}", it.message ?: it::class.simpleName.orEmpty()) }
+    val runs = RunRepository(cfg.settings)
     val http = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(json)
@@ -148,8 +171,11 @@ fun main() {
         http = http,
         botToken = botToken,
         brainBaseUrl = brainBaseUrl,
+        codexRunnerBaseUrl = codexRunnerBaseUrl,
         allowedUsers = allowedUsers,
         memory = memory,
+        runs = runs,
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
     )
 
     if (socketMode) {
@@ -207,8 +233,11 @@ private class SlackEventHandler(
     private val http: HttpClient,
     private val botToken: String,
     private val brainBaseUrl: String,
+    private val codexRunnerBaseUrl: String,
     private val allowedUsers: Set<String>,
     private val memory: SlackThreadMemoryRepository,
+    private val runs: RunRepository,
+    private val scope: CoroutineScope,
 ) {
     suspend fun handle(envelope: SlackEventEnvelope) {
         val event = envelope.event
@@ -286,6 +315,19 @@ private class SlackEventHandler(
             rememberMessage(session.id, channel, threadTs, null, null, SlackMessageDirection.GEM, reply, decision.runId)
         }
         sendSlackMessage(logger, http, botToken, channel, reply, threadTs)
+
+        if (threadTs != null && decision.shouldRunCodex()) {
+            scope.launch {
+                runCodexExecutor(
+                    decision = decision,
+                    user = user,
+                    text = text,
+                    contextMessages = contextMessages,
+                    channel = channel,
+                    threadTs = threadTs,
+                )
+            }
+        }
     }
 
     private fun getOrCreateSession(channel: String, threadTs: String, user: String): SlackThreadSessionRecord? =
@@ -328,6 +370,60 @@ private class SlackEventHandler(
             logger.warn("Failed to load Slack thread context session={}: {}", sessionId, it.message ?: it::class.simpleName.orEmpty())
         }.getOrDefault(emptyList())
 
+    private suspend fun runCodexExecutor(
+        decision: BrainDecisionResponse,
+        user: String,
+        text: String,
+        contextMessages: List<BrainContextMessage>,
+        channel: String,
+        threadTs: String,
+    ) {
+        val runId = decision.childRun?.id ?: decision.runId ?: return
+        if (codexRunnerBaseUrl.isBlank()) {
+            runs.appendEvent(runId, "warn", "Codex runner is not configured.", null)
+            sendSlackMessage(logger, http, botToken, channel, "Codex runner is not configured yet. Set `CODEX_RUNNER_BASE_URL` to enable execution.", threadTs)
+            return
+        }
+
+        sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` queued.", threadTs)
+        runCatching {
+            runs.markRunning(runId)
+            runs.appendEvent(runId, "info", "Calling Codex host runner.", null)
+            sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` running.", threadTs)
+            val response = http.post("$codexRunnerBaseUrl/codex/execute") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    CodexRunnerRequest(
+                        runId = runId,
+                        user = user,
+                        text = text,
+                        contextMessages = contextMessages,
+                        projectId = decision.projectId,
+                    ),
+                )
+            }.body<CodexRunnerResponse>()
+
+            val payload = buildJsonObject {
+                put("exitCode", response.exitCode)
+                put("durationMs", response.durationMs)
+                put("output", response.output.take(8000))
+                put("stderr", response.stderr.take(4000))
+            }.toString()
+
+            if (response.ok) {
+                runs.completeRun(runId, payload)
+                sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` completed.\n${response.output.take(3000)}", threadTs)
+            } else {
+                runs.failRun(runId, "Codex runner failed with exit ${response.exitCode}.", payload)
+                sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` failed with exit `${response.exitCode}`.\n${response.stderr.take(2000)}", threadTs)
+            }
+        }.onFailure { error ->
+            val message = error.message ?: error::class.simpleName.orEmpty()
+            runs.failRun(runId, "Codex runner request failed: $message")
+            sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` failed: $message", threadTs)
+        }
+    }
+
     private fun rememberMessage(
         sessionId: String?,
         channel: String,
@@ -354,6 +450,9 @@ private class SlackEventHandler(
         }
     }
 }
+
+private fun BrainDecisionResponse.shouldRunCodex(): Boolean =
+    decision in setOf("use_code_agent", "plan_with_llm")
 
 private fun String.isSessionCommand(): Boolean =
     trim().lowercase() in setOf("session", "/session")

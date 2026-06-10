@@ -112,6 +112,12 @@ Non-goals:
 - Running from the Slack request handler.
 - Sharing LiteLLM provider keys or budgets.
 
+First implementation path:
+- `slack-bot` talks to a Mac host `codex-runner` over HTTP.
+- `codex-runner` spawns `codex exec` with host auth and host repo access.
+- Slack receives queued/running/completed/failed status in the original thread.
+- Run events persist stdout, stderr, status, and final result.
+
 ### cloudflared
 
 Responsibilities:

@@ -58,6 +58,10 @@ Short follow-up questions like `what do you mean?` and `why?` should be
 answered from recent thread context. Today these are deterministic replies; the
 general LLM chat fallback is still a later step.
 
+Complex planning or code-agent requests can be handed to Codex through the
+host runner when `CODEX_RUNNER_BASE_URL` is configured. Slack receives status
+updates in the same thread while the run executes.
+
 ## Environment
 
 Required for real Slack usage:

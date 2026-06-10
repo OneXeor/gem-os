@@ -103,6 +103,70 @@ class RunRepository(private val settings: Settings) {
         }
     }
 
+    fun markRunning(runId: String): RunRecord = withConnection { conn ->
+        inTransaction(conn) {
+            conn.prepareStatement(
+                """
+                update runs
+                set status = 'running',
+                    started_at = coalesce(started_at, now())
+                where id = ?
+                """.trimIndent(),
+            ).use { stmt ->
+                stmt.setString(1, runId)
+                stmt.executeUpdate()
+            }
+            appendEvent(conn, runId, "info", "Run started.", null)
+            getRun(conn, runId) ?: error("Run not found after start: $runId")
+        }
+    }
+
+    fun completeRun(runId: String, resultJson: String): RunRecord = withConnection { conn ->
+        inTransaction(conn) {
+            conn.prepareStatement(
+                """
+                update runs
+                set status = 'completed',
+                    result_json = cast(? as jsonb),
+                    finished_at = now()
+                where id = ?
+                """.trimIndent(),
+            ).use { stmt ->
+                stmt.setString(1, resultJson)
+                stmt.setString(2, runId)
+                stmt.executeUpdate()
+            }
+            appendEvent(conn, runId, "info", "Run completed.", resultJson)
+            getRun(conn, runId) ?: error("Run not found after completion: $runId")
+        }
+    }
+
+    fun failRun(runId: String, error: String, payloadJson: String = "{}"): RunRecord = withConnection { conn ->
+        inTransaction(conn) {
+            conn.prepareStatement(
+                """
+                update runs
+                set status = 'failed',
+                    error = ?,
+                    finished_at = now()
+                where id = ?
+                """.trimIndent(),
+            ).use { stmt ->
+                stmt.setString(1, error)
+                stmt.setString(2, runId)
+                stmt.executeUpdate()
+            }
+            appendEvent(conn, runId, "error", error, payloadJson)
+            getRun(conn, runId) ?: error("Run not found after failure: $runId")
+        }
+    }
+
+    fun appendEvent(runId: String, level: String, message: String, payloadJson: String? = null) {
+        withConnection { conn ->
+            appendEvent(conn, runId, level, message, payloadJson)
+        }
+    }
+
     fun listRuns(limit: Int = 50): List<RunRecord> = withConnection { conn ->
         conn.prepareStatement(
             """
