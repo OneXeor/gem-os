@@ -117,9 +117,16 @@ object BrainDecider {
         }
 
     private fun commandDecision(config: GemConfig, request: BrainRequest, normalizedText: String): BrainDecisionResponse? {
-        val command = normalizedText.trim().removePrefix("/")
+        val command = normalizedText.trim().removePrefix("/").trimEnd('?', '!', '.')
         return when {
-            command in setOf("help", "what can you do", "commands") -> BrainDecisionResponse(
+            command in setOf(
+                "help",
+                "what can you do",
+                "what are you capable of",
+                "what can you help with",
+                "capabilities",
+                "commands",
+            ) -> BrainDecisionResponse(
                 decision = "show_help",
                 route = "context",
                 reason = "User asked for Gem help.",

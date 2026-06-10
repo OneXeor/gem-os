@@ -55,6 +55,18 @@ class BrainDeciderTest {
     }
 
     @Test
+    fun answersCapabilityQuestionDirectly() {
+        val decision = BrainDecider.decide(
+            config,
+            BrainRequest(user = "viktor", text = "What are you capable of?"),
+        )
+
+        assertEquals("show_help", decision.decision)
+        assertEquals("context", decision.route)
+        assertTrue(decision.replyText.orEmpty().contains("ASO"))
+    }
+
+    @Test
     fun addsFriendlyReplyForPlannerRoute() {
         val decision = BrainDecider.withReply(
             config,
