@@ -126,6 +126,17 @@ class BrainDeciderTest {
     }
 
     @Test
+    fun doesNotRouteWeatherQuestionsToPlanner() {
+        val request = BrainRequest(user = "viktor", text = "Hello man how is the wether today in wroclaw")
+        val decision = BrainDecider.withReply(config, request, BrainDecider.decide(config, request))
+
+        assertEquals("answer_live_data_unavailable", decision.decision)
+        assertEquals("chat", decision.route)
+        assertTrue(decision.replyText.orEmpty().contains("weather"))
+        assertTrue(decision.replyText.orEmpty().contains("Codex"))
+    }
+
+    @Test
     fun continuesFromThreadContext() {
         val decision = BrainDecider.decide(
             config,

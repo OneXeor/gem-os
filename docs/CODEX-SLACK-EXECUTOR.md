@@ -86,6 +86,9 @@ The first version is intentionally thin:
 It proves that Slack can launch Codex work, show status, persist run events,
 and return a result.
 
+Non-goal: live data lookup. Weather, current prices, latest news, and similar
+requests should use a live-data provider, not Codex.
+
 ## Later
 
 Next layers:

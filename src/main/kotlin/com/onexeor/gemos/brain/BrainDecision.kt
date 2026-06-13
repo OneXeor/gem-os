@@ -90,6 +90,14 @@ object BrainDecider {
             )
         }
 
+        if (looksLikeLiveDataQuestion(normalized)) {
+            return BrainDecisionResponse(
+                decision = "answer_live_data_unavailable",
+                route = "chat",
+                reason = "Request needs live external data, but no live-data provider is wired yet.",
+            )
+        }
+
         if (looksLikeCodeTask(normalized)) {
             return BrainDecisionResponse(
                 decision = "use_code_agent",
@@ -184,6 +192,7 @@ object BrainDecider {
             "answer_from_context" -> contextAnswer(config, request, decision)
             "answer_small_talk" -> smallTalkAnswer(request)
             "answer_follow_up" -> followUpAnswer(request)
+            "answer_live_data_unavailable" -> liveDataUnavailableAnswer(request)
             "use_code_agent" -> {
                 val provider = decision.provider ?: config.providers.providers.orchestration.defaultCodeRoute
                 val project = decision.projectId?.let { " for `$it`" }.orEmpty()
@@ -306,6 +315,18 @@ object BrainDecider {
         }
     }
 
+    private fun liveDataUnavailableAnswer(request: BrainRequest): String {
+        val normalized = request.text.trim().lowercase()
+        return when {
+            normalized.contains("weather") || normalized.contains("wether") || normalized.contains("forecast") ->
+                "I cannot check live weather yet. I need a weather/live-data provider wired into Gem OS; this should not be sent to Codex."
+            normalized.contains("news") || normalized.contains("today") ->
+                "I cannot fetch live external updates yet. I need a live-data provider wired into Gem OS; this should not be sent to Codex."
+            else ->
+                "I cannot answer live external data yet. I need a live-data provider wired into Gem OS; this should not be sent to Codex."
+        }
+    }
+
     private fun resolveProject(
         projects: List<ProjectConfig>,
         hint: String?,
@@ -376,6 +397,23 @@ object BrainDecider {
             "explain",
             "explain please",
         )
+
+    private fun looksLikeLiveDataQuestion(normalizedText: String): Boolean {
+        val text = normalizedText.trim()
+        val liveDataWords = listOf(
+            "weather",
+            "wether",
+            "forecast",
+            "temperature",
+            "news",
+            "price today",
+            "current price",
+            "exchange rate",
+        )
+        val temporalWords = listOf("today", "now", "current", "latest", "right now")
+        return liveDataWords.any { text.contains(it) } ||
+            (temporalWords.any { text.contains(it) } && text.contains(" in "))
+    }
 
     private fun looksLikeCodeTask(normalizedText: String): Boolean =
         listOf("implement", "fix", "refactor", "code", "test", "bug", "pr", "branch").any {

@@ -13,6 +13,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.bearerAuth
@@ -143,6 +144,7 @@ fun main() {
     val slackPort = (System.getenv("SLACK_PORT") ?: "8030").toInt()
     val brainBaseUrl = System.getenv("BRAIN_BASE_URL") ?: "http://brain:${cfg.settings.brainPort}"
     val codexRunnerBaseUrl = System.getenv("CODEX_RUNNER_BASE_URL").orEmpty().trimEnd('/')
+    val codexRunnerTimeoutMs = (System.getenv("CODEX_RUNNER_TIMEOUT_MS") ?: "900000").toLong()
     val botToken = System.getenv("SLACK_BOT_TOKEN").orEmpty()
     val appToken = System.getenv("SLACK_APP_TOKEN").orEmpty()
     val socketMode = (System.getenv("SLACK_SOCKET_MODE") ?: "false").toBooleanStrictOrNull() ?: false
@@ -163,6 +165,11 @@ fun main() {
     val http = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(json)
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = codexRunnerTimeoutMs
+            socketTimeoutMillis = codexRunnerTimeoutMs
+            connectTimeoutMillis = 30_000
         }
         install(WebSockets)
     }
