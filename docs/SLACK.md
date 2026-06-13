@@ -64,6 +64,8 @@ updates in the same thread while the run executes.
 
 Run progress follows the work Gem pattern in a small Slack module:
 
+- `SlackBotMain` owns bootstrapping: config, Ktor, Socket Mode, and dependency
+  wiring.
 - `SlackApiClient` owns Slack Web API calls.
 - `SlackRunStatusReporter` owns Assistant thread status and the live heartbeat
   message.
