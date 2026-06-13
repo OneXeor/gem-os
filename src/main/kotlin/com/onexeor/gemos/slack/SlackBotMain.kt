@@ -84,21 +84,6 @@ private data class SlackEvent(
     val subtype: String? = null,
 )
 
-@Serializable
-private data class SlackPostMessageRequest(
-    val channel: String,
-    val text: String,
-    @SerialName("thread_ts")
-    val threadTs: String? = null,
-)
-
-@Serializable
-private data class SlackApiResponse(
-    val ok: Boolean,
-    val error: String? = null,
-)
-
-@Serializable
 private data class SlackSocketConnectionResponse(
     val ok: Boolean,
     val url: String? = null,
@@ -173,20 +158,22 @@ fun main() {
         }
         install(WebSockets)
     }
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    val slack = SlackApiClient(logger = logger, http = http, botToken = botToken)
     val handler = SlackEventHandler(
         logger = logger,
         http = http,
-        botToken = botToken,
+        slack = slack,
         brainBaseUrl = brainBaseUrl,
         codexRunnerBaseUrl = codexRunnerBaseUrl,
         allowedUsers = allowedUsers,
         memory = memory,
         runs = runs,
-        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+        scope = scope,
     )
 
     if (socketMode) {
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+        scope.launch {
             SlackSocketModeRunner(
                 logger = logger,
                 http = http,
@@ -238,7 +225,7 @@ fun main() {
 private class SlackEventHandler(
     private val logger: org.slf4j.Logger,
     private val http: HttpClient,
-    private val botToken: String,
+    private val slack: SlackApiClient,
     private val brainBaseUrl: String,
     private val codexRunnerBaseUrl: String,
     private val allowedUsers: Set<String>,
@@ -266,7 +253,7 @@ private class SlackEventHandler(
 
         if (allowedUsers.isNotEmpty() && user !in allowedUsers) {
             logger.warn("Rejected Slack user {} because they are not in SLACK_ALLOWED_USERS", user)
-            sendSlackMessage(logger, http, botToken, channel, "Gem is not enabled for this Slack user yet.", threadTs)
+            slack.postMessage(channel, "Gem is not enabled for this Slack user yet.", threadTs)
             return
         }
 
@@ -277,7 +264,7 @@ private class SlackEventHandler(
             } else {
                 "Closed Gem session `${closed.id}`. The next message in this thread will start a fresh session."
             }
-            sendSlackMessage(logger, http, botToken, channel, reply, threadTs)
+            slack.postMessage(channel, reply, threadTs)
             return
         }
 
@@ -296,7 +283,7 @@ private class SlackEventHandler(
             if (session != null) {
                 rememberMessage(session.id, channel, threadTs, null, null, SlackMessageDirection.GEM, reply)
             }
-            sendSlackMessage(logger, http, botToken, channel, reply, threadTs)
+            slack.postMessage(channel, reply, threadTs)
             return
         }
 
@@ -321,7 +308,7 @@ private class SlackEventHandler(
         if (threadTs != null && session != null) {
             rememberMessage(session.id, channel, threadTs, null, null, SlackMessageDirection.GEM, reply, decision.runId)
         }
-        sendSlackMessage(logger, http, botToken, channel, reply, threadTs)
+        slack.postMessage(channel, reply, threadTs)
 
         if (threadTs != null && decision.shouldRunCodex()) {
             scope.launch {
@@ -388,15 +375,24 @@ private class SlackEventHandler(
         val runId = decision.childRun?.id ?: decision.runId ?: return
         if (codexRunnerBaseUrl.isBlank()) {
             runs.appendEvent(runId, "warn", "Codex runner is not configured.", null)
-            sendSlackMessage(logger, http, botToken, channel, "Codex runner is not configured yet. Set `CODEX_RUNNER_BASE_URL` to enable execution.", threadTs)
+            slack.postMessage(channel, "Codex runner is not configured yet. Set `CODEX_RUNNER_BASE_URL` to enable execution.", threadTs)
             return
         }
 
-        sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` queued.", threadTs)
+        val status = SlackRunStatusReporter(
+            logger = logger,
+            slack = slack,
+            channel = channel,
+            threadTs = threadTs,
+            runId = runId,
+        )
+        val heartbeat = status.start(scope)
+
+        slack.postMessage(channel, "Codex run `$runId` queued.", threadTs)
         runCatching {
             runs.markRunning(runId)
             runs.appendEvent(runId, "info", "Calling Codex host runner.", null)
-            sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` running.", threadTs)
+            slack.postMessage(channel, "Codex run `$runId` running.", threadTs)
             val response = http.post("$codexRunnerBaseUrl/codex/execute") {
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -419,15 +415,21 @@ private class SlackEventHandler(
 
             if (response.ok) {
                 runs.completeRun(runId, payload)
-                sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` completed.\n${response.output.take(3000)}", threadTs)
+                heartbeat.cancel()
+                status.finish(success = true)
+                slack.postMessage(channel, "Codex run `$runId` completed.\n${response.output.take(3000)}", threadTs)
             } else {
                 runs.failRun(runId, "Codex runner failed with exit ${response.exitCode}.", payload)
-                sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` failed with exit `${response.exitCode}`.\n${response.stderr.take(2000)}", threadTs)
+                heartbeat.cancel()
+                status.finish(success = false)
+                slack.postMessage(channel, "Codex run `$runId` failed with exit `${response.exitCode}`.\n${response.stderr.take(2000)}", threadTs)
             }
         }.onFailure { error ->
             val message = error.message ?: error::class.simpleName.orEmpty()
             runs.failRun(runId, "Codex runner request failed: $message")
-            sendSlackMessage(logger, http, botToken, channel, "Codex run `$runId` failed: $message", threadTs)
+            heartbeat.cancel()
+            status.finish(success = false)
+            slack.postMessage(channel, "Codex run `$runId` failed: $message", threadTs)
         }
     }
 
@@ -548,32 +550,6 @@ private fun SlackEvent.shouldIgnore(): Boolean =
 
 private fun String.stripBotMention(): String =
     replace(Regex("<@[A-Z0-9]+>"), " ")
-
-private suspend fun sendSlackMessage(
-    logger: org.slf4j.Logger,
-    http: HttpClient,
-    botToken: String,
-    channel: String,
-    text: String,
-    threadTs: String?,
-) {
-    if (botToken.isBlank()) {
-        logger.warn("Skipped Slack reply because SLACK_BOT_TOKEN is blank")
-        return
-    }
-
-    val response = http.post("https://slack.com/api/chat.postMessage") {
-        bearerAuth(botToken)
-        contentType(ContentType.Application.Json)
-        setBody(SlackPostMessageRequest(channel = channel, text = text, threadTs = threadTs))
-    }.body<SlackApiResponse>()
-
-    if (!response.ok) {
-        logger.error("Slack chat.postMessage failed for channel={}: {}", channel, response.error ?: "unknown error")
-    } else {
-        logger.info("Posted Slack reply to channel={}", channel)
-    }
-}
 
 object SlackResponseFormatter {
     fun format(decision: BrainDecisionResponse): String {

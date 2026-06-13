@@ -62,6 +62,13 @@ Complex planning or code-agent requests can be handed to Codex through the
 host runner when `CODEX_RUNNER_BASE_URL` is configured. Slack receives status
 updates in the same thread while the run executes.
 
+Run progress follows the work Gem pattern in a small Slack module:
+
+- `SlackApiClient` owns Slack Web API calls.
+- `SlackRunStatusReporter` owns Assistant thread status and the live heartbeat
+  message.
+- `SlackEventHandler` starts/stops the reporter around long-running runs.
+
 Live external data questions, such as weather, current prices, or latest news,
 must not be routed to Codex. They need a dedicated live-data provider; until
 that exists Gem should answer that the capability is not wired.
