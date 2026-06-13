@@ -67,7 +67,10 @@ Run progress follows the work Gem pattern in a small Slack module:
 - `SlackApiClient` owns Slack Web API calls.
 - `SlackRunStatusReporter` owns Assistant thread status and the live heartbeat
   message.
-- `SlackEventHandler` starts/stops the reporter around long-running runs.
+- `CodexRunExecutor` owns Codex queued/running/completed/failed lifecycle and
+  starts/stops the reporter around long-running runs.
+- `SlackEventHandler` handles Slack events, memory, Brain decisions, and run
+  delegation.
 
 Live external data questions, such as weather, current prices, or latest news,
 must not be routed to Codex. They need a dedicated live-data provider; until
