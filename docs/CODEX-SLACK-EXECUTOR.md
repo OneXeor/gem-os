@@ -32,6 +32,18 @@ Docker services call the host runner over HTTP:
 CODEX_RUNNER_BASE_URL=http://host.docker.internal:8040
 ```
 
+The host runner uses `workspace-write` for normal Codex work. Explicit Git
+metadata requests such as `commit`, `amend`, or `push` need `.git` write access,
+so the runner switches only those requests to `CODEX_GIT_SANDBOX`:
+
+```text
+CODEX_SANDBOX=workspace-write
+CODEX_GIT_SANDBOX=danger-full-access
+```
+
+Git writes should still be explicit Slack requests. Commit is allowed; push
+should only happen when the user asks for it.
+
 ## Status Lifecycle
 
 Slack should see:

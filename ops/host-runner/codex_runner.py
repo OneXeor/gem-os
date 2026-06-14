@@ -12,6 +12,7 @@ CODEX_BIN = os.environ.get("CODEX_BIN", "/Users/onexeor/.local/bin/codex")
 CODEX_WORKDIR = os.environ.get("CODEX_WORKDIR", "/Users/onexeor/src/gem-os")
 CODEX_TIMEOUT_SECONDS = int(os.environ.get("CODEX_TIMEOUT_SECONDS", "900"))
 CODEX_SANDBOX = os.environ.get("CODEX_SANDBOX", "workspace-write")
+CODEX_GIT_SANDBOX = os.environ.get("CODEX_GIT_SANDBOX", "danger-full-access")
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -60,13 +61,14 @@ class Handler(BaseHTTPRequestHandler):
 def execute_codex(payload):
     started = time.monotonic()
     prompt = build_prompt(payload)
+    sandbox = select_sandbox(payload)
     cmd = [
         CODEX_BIN,
         "exec",
         "--cd",
         CODEX_WORKDIR,
         "--sandbox",
-        CODEX_SANDBOX,
+        sandbox,
         "-",
     ]
     proc = subprocess.run(
@@ -86,6 +88,30 @@ def execute_codex(payload):
     }
 
 
+def select_sandbox(payload):
+    text = (payload.get("text") or "").lower()
+    if asks_for_git_metadata_write(text):
+        return CODEX_GIT_SANDBOX
+    return CODEX_SANDBOX
+
+
+def asks_for_git_metadata_write(text):
+    git_write_phrases = [
+        "commit",
+        "git commit",
+        "amend",
+        "git add",
+        "stage ",
+        "push",
+        "git push",
+        "tag ",
+        "git tag",
+        "merge ",
+        "rebase",
+    ]
+    return any(phrase in text for phrase in git_write_phrases)
+
+
 def build_prompt(payload):
     context = payload.get("contextMessages") or []
     context_text = "\n".join(
@@ -96,6 +122,7 @@ def build_prompt(payload):
             "You are running as Gem OS Codex executor from Slack.",
             "Work non-interactively. Be concise. Do not ask interactive questions.",
             "If the request is unsafe or unclear, explain what is needed instead of guessing.",
+            "When asked to commit, use the existing repository identity and do not push unless explicitly asked.",
             "",
             f"Run ID: {payload.get('runId', '')}",
             f"Slack user: {payload.get('user', '')}",
