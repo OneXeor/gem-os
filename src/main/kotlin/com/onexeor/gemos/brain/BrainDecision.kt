@@ -2,7 +2,6 @@ package com.onexeor.gemos.brain
 
 import com.onexeor.gemos.core.GemConfig
 import com.onexeor.gemos.core.run.ChildRunSummary
-import com.onexeor.gemos.core.PipelineConfig
 import com.onexeor.gemos.core.ProjectConfig
 import kotlinx.serialization.Serializable
 
@@ -34,6 +33,7 @@ data class BrainDecisionResponse(
     val provider: String? = null,
     val needsClarification: Boolean = false,
     val reason: String,
+    val executorText: String? = null,
 )
 
 object BrainDecider {
@@ -52,68 +52,14 @@ object BrainDecider {
         commandDecision(config, request, normalized)?.let { return it }
 
         val project = resolveProject(config.projects.projects, request.projectHint, normalized)
-        val pipeline = resolvePipeline(config.pipelines.pipelines, project, normalized)
-
-        if (pipeline != null && project != null) {
-            return BrainDecisionResponse(
-                decision = "run_pipeline",
-                route = config.providers.providers.orchestration.defaultPipelineRoute,
-                projectId = project.id,
-                pipelineId = pipeline.id,
-                provider = pipeline.provider.chat ?: pipeline.provider.codeAgent,
-                reason = "Request matched pipeline '${pipeline.id}' for project '${project.id}'.",
-            )
-        }
-
-        if (looksLikeProjectQuestion(normalized)) {
-            return BrainDecisionResponse(
-                decision = "answer_from_context",
-                route = "context",
-                projectId = project?.id,
-                reason = "Request can be answered from Gem identity/project configuration.",
-            )
-        }
-
-        if (looksLikeSmallTalk(normalized)) {
-            return BrainDecisionResponse(
-                decision = "answer_small_talk",
-                route = "chat",
-                reason = "Request is conversational small talk, not a planning or execution task.",
-            )
-        }
-
-        if (looksLikeFollowUpQuestion(normalized) && request.contextMessages.isNotEmpty()) {
-            return BrainDecisionResponse(
-                decision = "answer_follow_up",
-                route = "chat",
-                reason = "Request is a short follow-up question about the active Slack thread.",
-            )
-        }
-
-        if (looksLikeLiveDataQuestion(normalized)) {
-            return BrainDecisionResponse(
-                decision = "answer_live_data_unavailable",
-                route = "chat",
-                reason = "Request needs live external data, but no live-data provider is wired yet.",
-            )
-        }
-
-        if (looksLikeCodeTask(normalized)) {
-            return BrainDecisionResponse(
-                decision = "use_code_agent",
-                route = "code_agent",
-                projectId = project?.id,
-                provider = config.providers.providers.orchestration.defaultCodeRoute,
-                reason = "Request looks like an implementation or repository task.",
-            )
-        }
 
         return BrainDecisionResponse(
             decision = "plan_with_llm",
             route = "planner",
             projectId = project?.id,
             provider = config.providers.providers.orchestration.plannerDefault,
-            reason = "No deterministic pipeline matched; route to planner.",
+            reason = "Semantic routing is delegated to the planner so the LLM can choose the right capability.",
+            executorText = BrainPlannerPrompt.build(config, request, project),
         )
     }
 
@@ -190,9 +136,6 @@ object BrainDecider {
                 "I found `$pipeline` for `$project` and created a run. I will report progress here when execution is wired."
             }
             "answer_from_context" -> contextAnswer(config, request, decision)
-            "answer_small_talk" -> smallTalkAnswer(request)
-            "answer_follow_up" -> followUpAnswer(request)
-            "answer_live_data_unavailable" -> liveDataUnavailableAnswer(request)
             "use_code_agent" -> {
                 val provider = decision.provider ?: config.providers.providers.orchestration.defaultCodeRoute
                 val project = decision.projectId?.let { " for `$it`" }.orEmpty()
@@ -205,7 +148,7 @@ object BrainDecider {
                 } else {
                     ""
                 }
-                "I can plan this with `$provider`. For now I created the planning run.$contextNote"
+                "I sent this to `$provider` to decide whether to answer directly, use a script, make an execution plan, run code-agent work, or investigate deeply.$contextNote"
             }
             else -> "I created a run for this request."
         }
@@ -266,7 +209,8 @@ object BrainDecider {
         listOf(
             "I am Gem OS Brain, not one raw model.",
             "- Slack interface: `slack-bot`",
-            "- deterministic router: `brain`",
+            "- local command/context packager: `brain`",
+            "- semantic decision layer: `${config.providers.providers.orchestration.plannerDefault}`",
             "- default planner/code route: `${config.providers.providers.orchestration.plannerDefault}` / `${config.providers.providers.orchestration.defaultCodeRoute}`",
             "- local embeddings: `${config.settings.embeddingsModel}` (${config.settings.embeddingsVectorSize})",
             "- general LLM chat fallback: not wired yet",
@@ -280,50 +224,6 @@ object BrainDecider {
             "I do not have enough previous context in this Slack session yet."
         } else {
             "I found the active thread context. Last useful user message was: \"${lastUserMessage.text.take(180)}\""
-        }
-    }
-
-    private fun smallTalkAnswer(request: BrainRequest): String {
-        val normalized = request.text.trim().lowercase()
-        return when {
-            normalized.contains("how are you") -> "I'm running. Slack sessions and thread memory are active, but real execution is still being wired."
-            normalized in setOf("hi", "hello", "hey", "yo") -> "Hey. Tell me what you want to work on, or type `help`."
-            normalized.contains("thank") -> "You are welcome."
-            else -> "I'm here. Tell me what you want to work on, or type `help`."
-        }
-    }
-
-    private fun followUpAnswer(request: BrainRequest): String {
-        val normalized = request.text.trim().lowercase().trimEnd('?', '!', '.')
-        val lastAssistantMessage = request.contextMessages
-            .asReversed()
-            .firstOrNull { it.role == "assistant" }
-            ?.text
-            .orEmpty()
-
-        if (lastAssistantMessage.contains("real execution is still being wired", ignoreCase = true)) {
-            return when (normalized) {
-                "why" -> "Because we have built the Slack interface, sessions, and thread memory first. The execution layer that actually runs pipelines or code agents from Slack is next."
-                else -> "I mean Gem can already keep Slack thread sessions and remember recent messages, but it cannot yet execute pipelines or Codex tasks end-to-end from Slack."
-            }
-        }
-
-        return when (normalized) {
-            "why" -> "Because the previous step matched the current deterministic routing rules. I need the real chat fallback next to explain arbitrary context more naturally."
-            "what do you mean" -> "I was referring to the previous message in this Slack thread. The current version can use thread context, but only through deterministic replies so far."
-            else -> "I am answering based on the recent Slack thread context. The general chat fallback still needs to be connected."
-        }
-    }
-
-    private fun liveDataUnavailableAnswer(request: BrainRequest): String {
-        val normalized = request.text.trim().lowercase()
-        return when {
-            normalized.contains("weather") || normalized.contains("wether") || normalized.contains("forecast") ->
-                "I cannot check live weather yet. I need a weather/live-data provider wired into Gem OS; this should not be sent to Codex."
-            normalized.contains("news") || normalized.contains("today") ->
-                "I cannot fetch live external updates yet. I need a live-data provider wired into Gem OS; this should not be sent to Codex."
-            else ->
-                "I cannot answer live external data yet. I need a live-data provider wired into Gem OS; this should not be sent to Codex."
         }
     }
 
@@ -347,76 +247,69 @@ object BrainDecider {
                 project.aliases.any { normalizedText.contains(it.lowercase()) }
         }
     }
+}
 
-    private fun resolvePipeline(
-        pipelines: List<PipelineConfig>,
-        project: ProjectConfig?,
-        normalizedText: String,
-    ): PipelineConfig? {
-        val pipelineHints = listOf("run", "start", "check", "monitor", "pipeline", "aso")
-        if (pipelineHints.none { normalizedText.contains(it) }) return null
+object BrainPlannerPrompt {
+    fun build(config: GemConfig, request: BrainRequest, project: ProjectConfig?): String {
+        val pipelineCatalog = config.pipelines.pipelines.joinToString("\n") { pipeline ->
+            val projects = pipeline.projectIds.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "any"
+            val command = pipeline.execution.command.joinToString(" ").ifBlank { "not configured" }
+            "- ${pipeline.id}: ${pipeline.name}; enabled=${pipeline.enabled}; projects=$projects; execution=${pipeline.execution.type}; command=$command"
+        }.ifBlank { "- none configured" }
 
-        val candidates = if (project == null) {
-            pipelines
-        } else {
-            pipelines.filter { pipeline ->
-                pipeline.projectIds.isEmpty() || project.id in pipeline.projectIds || pipeline.id in project.pipelines
-            }
-        }
+        val projectCatalog = config.projects.projects.joinToString("\n") { configuredProject ->
+            val aliases = configuredProject.aliases.joinToString(", ").ifBlank { "none" }
+            val pipelines = configuredProject.pipelines.joinToString(", ").ifBlank { "none" }
+            "- ${configuredProject.id}: ${configuredProject.name}; aliases=$aliases; pipelines=$pipelines"
+        }.ifBlank { "- none configured" }
 
-        return candidates.firstOrNull { pipeline ->
-            normalizedText.contains(pipeline.id.lowercase()) ||
-                normalizedText.contains(pipeline.name.lowercase()) ||
-                pipeline.id.split("-").any { it.length > 2 && normalizedText.contains(it.lowercase()) }
-        }
+        val context = request.contextMessages.takeLast(12).joinToString("\n") { message ->
+            "${message.role}: ${message.text.take(1000)}"
+        }.ifBlank { "none" }
+
+        val selectedProject = project?.id ?: "unknown"
+        return """
+            You are Gem OS Brain's LLM decision layer, running from Slack.
+
+            Decide the right next action for the user request. Do not rely on hard-coded keyword routing.
+            Choose exactly one mode:
+            - direct_answer: answer immediately when the result is low-risk and does not need tools.
+            - default_value: return a sensible configured default when the user asks for one.
+            - script: select a configured pipeline/script when the request maps to one.
+            - multi_script_plan: produce an ordered plan of scripts/pipelines to execute.
+            - code_agent: perform repository implementation, debugging, refactoring, or tests.
+            - deep_investigation: inspect context/code/docs first and then report findings or a plan.
+            - needs_clarification: ask one concise question only when required to avoid a wrong action.
+
+            Safety:
+            - Work non-interactively unless clarification is truly required.
+            - Do not pretend unavailable live-data tools exist. If live data is needed, say which provider/tool is missing.
+            - Do not execute destructive or externally visible changes without explicit approval.
+            - For configured scripts, name the pipeline id and command before suggesting execution.
+
+            Reply format:
+            mode: <one mode>
+            project: <project id or unknown>
+            action: <concise decision>
+            steps:
+            - <only include concrete steps when useful>
+            response:
+            <Slack-ready answer or status>
+
+            User: ${request.user}
+            Project hint: ${request.projectHint ?: "none"}
+            Resolved project: $selectedProject
+            Request:
+            ${request.text.trim()}
+
+            Recent Slack context:
+            $context
+
+            Configured projects:
+            $projectCatalog
+
+            Configured scripts/pipelines:
+            $pipelineCatalog
+        """.trimIndent()
     }
-
-    private fun looksLikeProjectQuestion(normalizedText: String): Boolean =
-        listOf("who are you", "who am i", "projects", "what projects", "status").any {
-            normalizedText.contains(it)
-        }
-
-    private fun looksLikeSmallTalk(normalizedText: String): Boolean =
-        normalizedText.trim().trimEnd('?', '!', '.') in setOf(
-            "hi",
-            "hello",
-            "hey",
-            "yo",
-            "how are you",
-            "how are you doing",
-            "thanks",
-            "thank you",
-        )
-
-    private fun looksLikeFollowUpQuestion(normalizedText: String): Boolean =
-        normalizedText.trim().trimEnd('?', '!', '.') in setOf(
-            "what do you mean",
-            "what does it mean",
-            "why",
-            "why so",
-            "explain",
-            "explain please",
-        )
-
-    private fun looksLikeLiveDataQuestion(normalizedText: String): Boolean {
-        val text = normalizedText.trim()
-        val liveDataWords = listOf(
-            "weather",
-            "wether",
-            "forecast",
-            "temperature",
-            "news",
-            "price today",
-            "current price",
-            "exchange rate",
-        )
-        val temporalWords = listOf("today", "now", "current", "latest", "right now")
-        return liveDataWords.any { text.contains(it) } ||
-            (temporalWords.any { text.contains(it) } && text.contains(" in "))
-    }
-
-    private fun looksLikeCodeTask(normalizedText: String): Boolean =
-        listOf("implement", "fix", "refactor", "code", "test", "bug", "pr", "branch").any {
-            normalizedText.contains(it)
-        }
 }

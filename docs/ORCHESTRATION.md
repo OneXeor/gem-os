@@ -12,8 +12,8 @@ capabilities to use for a task.
 Slack request
   -> identify user/project/thread
   -> build Gem/Viktor/project context
-  -> brain classifies task
-  -> brain chooses capability
+  -> brain handles exact local commands or packages planner context
+  -> planner LLM chooses semantic capability
   -> create run
   -> create child run for selected capability
   -> execute pipeline/agent/tool/provider
@@ -36,6 +36,20 @@ Codex is the default planner when a request needs reasoning over context. The
 planner does not own the system. It receives a structured context package from
 Gem and returns a plan, selected capability, or execution result depending on
 the task.
+
+Brain should avoid large keyword decision trees. Outside of empty requests and
+exact local commands such as `help`, `status`, `projects`, `runs`, `session`,
+and `continue`, Brain delegates semantic routing to the planner. The planner
+prompt includes configured projects, scripts/pipelines, recent Slack context,
+and the allowed decision modes:
+
+- direct answer
+- configured default value
+- one configured script/pipeline
+- multi-script execution plan
+- code-agent work
+- deep investigation
+- clarification only when necessary
 
 Claude Code headless can be added as an explicit paid fallback later, but Gem
 must not depend on it for default operation.

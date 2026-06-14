@@ -10,28 +10,30 @@ class BrainDeciderTest {
     private val config = ConfigLoader.load(".")
 
     @Test
-    fun routesAsoRequestsToAsoPipeline() {
+    fun delegatesAsoRequestsToPlannerWithScriptCatalog() {
         val decision = BrainDecider.decide(
             config,
             BrainRequest(user = "viktor", text = "run ASO check", projectHint = "aso"),
         )
 
-        assertEquals("run_pipeline", decision.decision)
-        assertEquals("scheduler", decision.route)
+        assertEquals("plan_with_llm", decision.decision)
+        assertEquals("planner", decision.route)
         assertEquals("aso-fabric", decision.projectId)
-        assertEquals("aso-monitor", decision.pipelineId)
+        assertTrue(decision.executorText.orEmpty().contains("script"))
+        assertTrue(decision.executorText.orEmpty().contains("aso-monitor"))
     }
 
     @Test
-    fun routesCodeRequestsToCodexAgent() {
+    fun delegatesCodeRequestsToPlannerWithCodeAgentMode() {
         val decision = BrainDecider.decide(
             config,
             BrainRequest(user = "viktor", text = "fix this bug in hopin", projectHint = "hopin"),
         )
 
-        assertEquals("use_code_agent", decision.decision)
-        assertEquals("code_agent", decision.route)
+        assertEquals("plan_with_llm", decision.decision)
+        assertEquals("planner", decision.route)
         assertEquals("codex", decision.provider)
+        assertTrue(decision.executorText.orEmpty().contains("code_agent"))
     }
 
     @Test
@@ -90,17 +92,17 @@ class BrainDeciderTest {
         )
 
         assertEquals("plan_with_llm", decision.decision)
-        assertTrue(decision.replyText.orEmpty().contains("created the planning run"))
+        assertTrue(decision.replyText.orEmpty().contains("decide whether"))
     }
 
     @Test
-    fun answersSmallTalkWithoutPlanner() {
+    fun delegatesSmallTalkToPlannerForDirectAnswerDecision() {
         val request = BrainRequest(user = "viktor", text = "how are you?")
         val decision = BrainDecider.withReply(config, request, BrainDecider.decide(config, request))
 
-        assertEquals("answer_small_talk", decision.decision)
-        assertEquals("chat", decision.route)
-        assertTrue(decision.replyText.orEmpty().contains("running"))
+        assertEquals("plan_with_llm", decision.decision)
+        assertEquals("planner", decision.route)
+        assertTrue(decision.executorText.orEmpty().contains("direct_answer"))
     }
 
     @Test
@@ -115,25 +117,25 @@ class BrainDeciderTest {
 
         val meaningRequest = BrainRequest(user = "viktor", text = "What do you mean", contextMessages = context)
         val meaningDecision = BrainDecider.withReply(config, meaningRequest, BrainDecider.decide(config, meaningRequest))
-        assertEquals("answer_follow_up", meaningDecision.decision)
-        assertEquals("chat", meaningDecision.route)
-        assertTrue(meaningDecision.replyText.orEmpty().contains("cannot yet execute"))
+        assertEquals("plan_with_llm", meaningDecision.decision)
+        assertEquals("planner", meaningDecision.route)
+        assertTrue(meaningDecision.executorText.orEmpty().contains("Recent Slack context"))
 
         val whyRequest = BrainRequest(user = "viktor", text = "Why?", contextMessages = context)
         val whyDecision = BrainDecider.withReply(config, whyRequest, BrainDecider.decide(config, whyRequest))
-        assertEquals("answer_follow_up", whyDecision.decision)
-        assertTrue(whyDecision.replyText.orEmpty().contains("Slack interface"))
+        assertEquals("plan_with_llm", whyDecision.decision)
+        assertTrue(whyDecision.executorText.orEmpty().contains("assistant: I'm running"))
     }
 
     @Test
-    fun doesNotRouteWeatherQuestionsToPlanner() {
+    fun delegatesWeatherQuestionsWithLiveDataWarning() {
         val request = BrainRequest(user = "viktor", text = "Hello man how is the wether today in wroclaw")
         val decision = BrainDecider.withReply(config, request, BrainDecider.decide(config, request))
 
-        assertEquals("answer_live_data_unavailable", decision.decision)
-        assertEquals("chat", decision.route)
-        assertTrue(decision.replyText.orEmpty().contains("weather"))
-        assertTrue(decision.replyText.orEmpty().contains("Codex"))
+        assertEquals("plan_with_llm", decision.decision)
+        assertEquals("planner", decision.route)
+        assertTrue(decision.executorText.orEmpty().contains("live-data"))
+        assertTrue(decision.executorText.orEmpty().contains("Do not pretend unavailable live-data tools exist"))
     }
 
     @Test

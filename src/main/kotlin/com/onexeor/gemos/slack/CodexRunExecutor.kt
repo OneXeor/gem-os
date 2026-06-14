@@ -56,7 +56,7 @@ internal class CodexRunExecutor(
                     CodexRunnerRequest(
                         runId = runId,
                         user = user,
-                        text = text,
+                        text = decision.executorText ?: text,
                         contextMessages = contextMessages,
                         projectId = decision.projectId,
                     ),
