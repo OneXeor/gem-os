@@ -45,11 +45,10 @@ internal class CodexRunExecutor(
         )
         val heartbeat = status.start(scope)
 
-        slack.postMessage(channel, "Codex run `$runId` queued.", threadTs)
         runCatching {
             runs.markRunning(runId)
             runs.appendEvent(runId, "info", "Calling Codex host runner.", null)
-            slack.postMessage(channel, "Codex run `$runId` running.", threadTs)
+            status.markRunning()
 
             val response = http.post("$codexRunnerBaseUrl/codex/execute") {
                 contentType(ContentType.Application.Json)
@@ -75,7 +74,8 @@ internal class CodexRunExecutor(
                 runs.completeRun(runId, payload)
                 heartbeat.cancel()
                 status.finish(success = true)
-                slack.postMessage(channel, "Codex run `$runId` completed.\n${response.output.take(3000)}", threadTs)
+                val reply = response.output.take(3000).ifBlank { "Codex run `$runId` completed." }
+                slack.postMessage(channel, reply, threadTs)
             } else {
                 runs.failRun(runId, "Codex runner failed with exit ${response.exitCode}.", payload)
                 heartbeat.cancel()

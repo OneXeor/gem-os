@@ -74,6 +74,10 @@ Run progress follows the work Gem pattern in a small Slack module:
 - `SlackEventHandler` handles Slack events, memory, Brain decisions, and run
   delegation.
 
+Codex queued/running progress should not be posted as ordinary chat messages.
+It goes through `assistant.threads.setStatus`; long runs get one heartbeat
+message that is updated in-place and deleted on success.
+
 Live external data questions, such as weather, current prices, or latest news,
 must not be routed to Codex. They need a dedicated live-data provider; until
 that exists Gem should answer that the capability is not wired.

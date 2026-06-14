@@ -15,15 +15,21 @@ internal class SlackRunStatusReporter(
 ) {
     private val startedAtMs = System.currentTimeMillis()
     private var heartbeatTs: String? = null
+    private var currentStatus: String = QUEUED_STATUS
 
     fun start(scope: CoroutineScope): Job =
         scope.launch {
-            slack.setAssistantStatus(channel, threadTs, THINKING_STATUS)
+            slack.setAssistantStatus(channel, threadTs, currentStatus)
             while (isActive) {
                 delay(HEARTBEAT_INTERVAL_MS)
                 heartbeat()
             }
         }
+
+    suspend fun markRunning() {
+        currentStatus = RUNNING_STATUS
+        slack.setAssistantStatus(channel, threadTs, currentStatus)
+    }
 
     suspend fun finish(success: Boolean) {
         runCatching {
@@ -40,7 +46,7 @@ internal class SlackRunStatusReporter(
     }
 
     private suspend fun heartbeat() {
-        slack.setAssistantStatus(channel, threadTs, THINKING_STATUS)
+        slack.setAssistantStatus(channel, threadTs, currentStatus)
         val elapsedMs = System.currentTimeMillis() - startedAtMs
         if (elapsedMs < HEARTBEAT_VISIBLE_AFTER_MS) return
 
@@ -64,7 +70,8 @@ internal class SlackRunStatusReporter(
     }
 
     companion object {
-        private const val THINKING_STATUS = "is thinking..."
+        private const val QUEUED_STATUS = "is queued..."
+        private const val RUNNING_STATUS = "is running Codex..."
         private const val HEARTBEAT_INTERVAL_MS = 20_000L
         private const val HEARTBEAT_VISIBLE_AFTER_MS = 25_000L
     }

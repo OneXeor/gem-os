@@ -68,11 +68,14 @@ internal class SlackApiClient(
         if (botToken.isBlank()) return
 
         runCatching {
-            http.post("https://slack.com/api/assistant.threads.setStatus") {
+            val response = http.post("https://slack.com/api/assistant.threads.setStatus") {
                 bearerAuth(botToken)
                 contentType(ContentType.Application.Json)
                 setBody(SlackAssistantStatusRequest(channelId = channel, threadTs = threadTs, status = status))
             }.body<SlackApiResponse>()
+            if (!response.ok) {
+                logger.warn("Slack assistant.threads.setStatus failed for channel={}: {}", channel, response.error ?: "unknown error")
+            }
         }.onFailure {
             logger.debug("Slack assistant.threads.setStatus failed: {}", it.message ?: it::class.simpleName.orEmpty())
         }
